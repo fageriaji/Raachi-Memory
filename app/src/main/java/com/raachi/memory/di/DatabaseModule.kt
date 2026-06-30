@@ -3,8 +3,6 @@ package com.raachi.memory.di
 import android.content.Context
 import androidx.room.Room
 import com.raachi.memory.data.local.RaachiDatabase
-import com.raachi.memory.data.local.dao.SettingsDao
-import com.raachi.memory.data.local.dao.UserDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,9 +16,7 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(
-        @ApplicationContext context: Context
-    ): RaachiDatabase {
+    fun provideDatabase(@ApplicationContext context: Context): RaachiDatabase {
         return Room.databaseBuilder(
             context,
             RaachiDatabase::class.java,
@@ -29,18 +25,17 @@ object DatabaseModule {
     }
 
     @Provides
-    @Singleton
-    fun provideUserDao(
-        database: RaachiDatabase
-    ): UserDao {
-        return database.userDao
-    }
+    fun provideUserDao(db: RaachiDatabase) = db.userDao
 
     @Provides
-    @Singleton
-    fun provideSettingsDao(
-        database: RaachiDatabase
-    ): SettingsDao {
-        return database.settingsDao
-    }
+    fun provideSettingsDao(db: RaachiDatabase) = db.settingsDao
+
+    @Provides
+    fun provideReminderDao(db: RaachiDatabase) = db.reminderDao
+
+    @Provides
+    fun provideLedgerDao(db: RaachiDatabase) = db.ledgerDao
+
+    @Provides
+    fun provideActivityDao(db: RaachiDatabase) = db.activityDao
 }

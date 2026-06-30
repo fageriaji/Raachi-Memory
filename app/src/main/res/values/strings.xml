@@ -1,3 +1,31 @@
 <resources>
     <string name="app_name">Raachi Memory</string>
+
+    <string name="good_morning">Good Morning,</string>
+    <string name="good_afternoon">Good Afternoon,</string>
+    <string name="good_evening">Good Evening,</string>
+    <string name="reminders">Reminders</string>
+    <string name="ledger">Ledger</string>
+    <string name="done">Done</string>
+
+    <string name="up_next">Up Next</string>
+    <string name="all_caught_up">All Caught Up</string>
+    <string name="no_reminders_scheduled">No reminders scheduled.</string>
+    <string name="category_format">Category: %1$s</string>
+
+    <string name="pending_ledger">Pending Ledger</string>
+    <string name="all_settled">All Settled</string>
+    <string name="nothing_pending">Nothing pending.</string>
+    <string name="items_pending_format">%1$d Items Pending</string>
+    <string name="total_amount_format">Total Amount: $%.2f</string>
+
+    <string name="quick_actions">Quick Actions</string>
+    <string name="reminder">Reminder</string>
+    <string name="add_reminder">Add Reminder</string>
+    <string name="add_ledger_entry">Add Ledger Entry</string>
+    <string name="expand_actions">Expand Actions</string>
+
+    <string name="home">Home</string>
+    <string name="activity">Activity</string>
+    <string name="profile">Profile</string>
 </resources>
