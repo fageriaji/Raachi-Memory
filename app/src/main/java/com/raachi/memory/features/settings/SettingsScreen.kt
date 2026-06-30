@@ -20,7 +20,13 @@ fun SettingsScreen(onNavigateBack: () -> Unit) {
         ) {
             SectionHeader(title = "Settings")
             Spacer(modifier = Modifier.height(16.dp))
-            EmptyState(message = "App preferences.")
+
+            // FIX: Added 'title'
+            EmptyState(
+                title = "Preferences",
+                message = "App preferences will appear here."
+            )
+
             Spacer(modifier = Modifier.height(32.dp))
             SecondaryButton(text = "Back", onClick = onNavigateBack)
         }

@@ -3,15 +3,19 @@ package com.raachi.memory.core.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.raachi.memory.features.activity.ActivityScreen
 import com.raachi.memory.features.dashboard.DashboardScreen
 import com.raachi.memory.features.ledger.LedgerScreen
-import com.raachi.memory.features.profile.OnboardingScreen
+import com.raachi.memory.features.profile.NameInputScreen
+import com.raachi.memory.features.profile.OptionalProfileScreen
 import com.raachi.memory.features.profile.ProfileScreen
 import com.raachi.memory.features.profile.SplashScreen
+import com.raachi.memory.features.profile.WelcomeScreen
 import com.raachi.memory.features.reminder.ReminderScreen
 import com.raachi.memory.features.settings.SettingsScreen
 
@@ -31,19 +35,42 @@ fun RaachiNavHost(
     ) {
         composable(AppRoute.Splash.route) {
             SplashScreen(
-                onNavigateToOnboarding = {
-                    navController.navigate(AppRoute.Onboarding.route) {
+                onNavigateToWelcome = {
+                    navController.navigate(AppRoute.Welcome.route) {
+                        popUpTo(AppRoute.Splash.route) { inclusive = true }
+                    }
+                },
+                onNavigateToDashboard = {
+                    navController.navigate(AppRoute.Dashboard.route) {
                         popUpTo(AppRoute.Splash.route) { inclusive = true }
                     }
                 }
             )
         }
 
-        composable(AppRoute.Onboarding.route) {
-            OnboardingScreen(
+        composable(AppRoute.Welcome.route) {
+            WelcomeScreen(
+                onGetStarted = { navController.navigate(AppRoute.NameInput.route) }
+            )
+        }
+
+        composable(AppRoute.NameInput.route) {
+            NameInputScreen(
+                onContinue = { name ->
+                    navController.navigate(AppRoute.OptionalProfile.createRoute(name))
+                }
+            )
+        }
+
+        composable(
+            route = AppRoute.OptionalProfile.route,
+            arguments = listOf(navArgument("name") { type = NavType.StringType })
+        ) {
+            OptionalProfileScreen(
                 onComplete = {
                     navController.navigate(AppRoute.Dashboard.route) {
-                        popUpTo(AppRoute.Onboarding.route) { inclusive = true }
+                        // Clear the entire onboarding flow from the backstack
+                        popUpTo(AppRoute.Welcome.route) { inclusive = true }
                     }
                 }
             )

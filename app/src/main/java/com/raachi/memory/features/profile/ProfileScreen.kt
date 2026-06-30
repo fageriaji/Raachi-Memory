@@ -24,7 +24,13 @@ fun ProfileScreen(
         ) {
             SectionHeader(title = "Profile")
             Spacer(modifier = Modifier.height(16.dp))
-            EmptyState(message = "Profile details will appear here.")
+
+            // FIX: Added 'title'
+            EmptyState(
+                title = "Your Profile",
+                message = "Profile details will appear here."
+            )
+
             Spacer(modifier = Modifier.height(32.dp))
             PrimaryButton(text = "Settings", onClick = onNavigateToSettings, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(16.dp))

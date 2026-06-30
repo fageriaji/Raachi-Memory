@@ -20,7 +20,13 @@ fun LedgerScreen(onNavigateBack: () -> Unit) {
         ) {
             SectionHeader(title = "Ledger")
             Spacer(modifier = Modifier.height(16.dp))
-            EmptyState(message = "No borrowed items yet.")
+
+            // FIX: Added 'title'
+            EmptyState(
+                title = "All Clear",
+                message = "No borrowed items yet."
+            )
+
             Spacer(modifier = Modifier.height(32.dp))
             SecondaryButton(text = "Back", onClick = onNavigateBack)
         }

@@ -20,7 +20,13 @@ fun ActivityScreen(onNavigateBack: () -> Unit) {
         ) {
             SectionHeader(title = "Activity History")
             Spacer(modifier = Modifier.height(16.dp))
-            EmptyState(message = "No recent activity.")
+
+            // FIX: Added 'title'
+            EmptyState(
+                title = "No History",
+                message = "No recent activity."
+            )
+
             Spacer(modifier = Modifier.height(32.dp))
             SecondaryButton(text = "Back", onClick = onNavigateBack)
         }

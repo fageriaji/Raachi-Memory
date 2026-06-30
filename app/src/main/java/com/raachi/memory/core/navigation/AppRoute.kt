@@ -10,8 +10,17 @@ sealed interface AppRoute {
         override val route: String = "splash"
     }
 
-    data object Onboarding : AppRoute {
-        override val route: String = "onboarding"
+    data object Welcome : AppRoute {
+        override val route: String = "welcome"
+    }
+
+    data object NameInput : AppRoute {
+        override val route: String = "name_input"
+    }
+
+    data object OptionalProfile : AppRoute {
+        override val route = "optional_profile/{name}"
+        fun createRoute(name: String) = "optional_profile/$name"
     }
 
     data object Dashboard : AppRoute {
