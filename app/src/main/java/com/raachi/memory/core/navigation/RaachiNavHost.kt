@@ -20,6 +20,7 @@ import com.raachi.memory.features.profile.OptionalProfileScreen
 import com.raachi.memory.features.profile.ProfileScreen
 import com.raachi.memory.features.profile.SplashScreen
 import com.raachi.memory.features.profile.WelcomeScreen
+import com.raachi.memory.features.reminder.AddEditReminderScreen
 import com.raachi.memory.features.reminder.ReminderScreen
 import com.raachi.memory.features.settings.SettingsScreen
 import com.raachi.memory.ui.components.RaachiBottomBar
@@ -94,13 +95,24 @@ fun RaachiNavHost(
 
             composable(AppRoute.Dashboard.route) {
                 DashboardScreen(
-                    onNavigateToReminder = { /* Create Reminder functionality later */ },
-                    onNavigateToLedger = { /* Create Ledger functionality later */ }
+                    onNavigateToReminder = { navController.navigate(AppRoute.AddEditReminder.createRoute(-1)) },
+                    onNavigateToLedger = { /* Implement Ledger Add functionality in Phase 7 */ }
                 )
             }
 
             composable(AppRoute.Reminder.route) {
-                ReminderScreen(onNavigateBack = { navController.popBackStack() })
+                ReminderScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToAdd = { navController.navigate(AppRoute.AddEditReminder.createRoute(-1)) },
+                    onNavigateToEdit = { id -> navController.navigate(AppRoute.AddEditReminder.createRoute(id)) }
+                )
+            }
+
+            composable(
+                route = AppRoute.AddEditReminder.route,
+                arguments = listOf(navArgument("reminderId") { type = NavType.IntType })
+            ) {
+                AddEditReminderScreen(onNavigateBack = { navController.popBackStack() })
             }
 
             composable(AppRoute.Ledger.route) {

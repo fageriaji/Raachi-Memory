@@ -31,6 +31,12 @@ sealed interface AppRoute {
         override val route: String = "reminder"
     }
 
+    // Phase 6 addition
+    data object AddEditReminder : AppRoute {
+        override val route = "add_edit_reminder/{reminderId}"
+        fun createRoute(reminderId: Int = -1) = "add_edit_reminder/$reminderId"
+    }
+
     data object Ledger : AppRoute {
         override val route: String = "ledger"
     }
