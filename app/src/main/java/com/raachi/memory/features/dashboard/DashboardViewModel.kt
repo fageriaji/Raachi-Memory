@@ -21,7 +21,16 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
 
-enum class TimeOfDay { MORNING, AFTERNOON, EVENING }
+enum class TimeOfDay { MORNING, AFTERNOON, EVENING, NIGHT }
+
+// Sealed class to handle summary logic safely within the ViewModel
+// without relying on Android Context/Strings directly.
+sealed class DailySummary {
+    data class RemindersAndLedgers(val reminders: Int, val ledgers: Int) : DailySummary()
+    data class RemindersOnly(val reminders: Int) : DailySummary()
+    data class LedgersOnly(val ledgers: Int) : DailySummary()
+    data object AllCaughtUp : DailySummary()
+}
 
 data class DashboardState(
     val userName: String = "",
@@ -29,9 +38,11 @@ data class DashboardState(
     val pendingLedgerCount: Int = 0,
     val pendingLedgerAmount: Double = 0.0,
     val completedTodayCount: Int = 0,
-    val nextReminder: Reminder? = null,
+    val upcomingReminders: List<Reminder> = emptyList(),
+    val topPendingLedgers: List<LedgerEntry> = emptyList(),
     val timeOfDay: TimeOfDay = TimeOfDay.MORNING,
-    val currentDate: String = ""
+    val currentDate: String = "",
+    val dailySummary: DailySummary = DailySummary.AllCaughtUp
 )
 
 @HiltViewModel
@@ -41,7 +52,8 @@ class DashboardViewModel @Inject constructor(
     ledgerRepository: LedgerRepository
 ) : ViewModel() {
 
-    private val dateFormatter = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
+    // Updated date format
+    private val dateFormatter = DateTimeFormatter.ofPattern("EEEE '·' d MMMM", Locale.getDefault())
 
     val uiState: StateFlow<DashboardState> = combine(
         userRepository.getUserProfile(),
@@ -54,20 +66,37 @@ class DashboardViewModel @Inject constructor(
 
         val hour = LocalTime.now().hour
         val timeOfDay = when (hour) {
-            in 0..11 -> TimeOfDay.MORNING
+            in 6..11 -> TimeOfDay.MORNING
             in 12..16 -> TimeOfDay.AFTERNOON
-            else -> TimeOfDay.EVENING
+            in 17..21 -> TimeOfDay.EVENING
+            else -> TimeOfDay.NIGHT
+        }
+
+        val upNext = activeReminders.sortedBy { it.nextTrigger }.take(2)
+        val topLedgers = pendingLedgers.sortedBy { it.dueDate }.take(2)
+
+        val rCount = activeReminders.size
+        val lCount = pendingLedgers.size
+
+        // Calculate dynamic summary state inside ViewModel
+        val summary = when {
+            rCount > 0 && lCount > 0 -> DailySummary.RemindersAndLedgers(rCount, lCount)
+            rCount > 0 -> DailySummary.RemindersOnly(rCount)
+            lCount > 0 -> DailySummary.LedgersOnly(lCount)
+            else -> DailySummary.AllCaughtUp
         }
 
         DashboardState(
             userName = user?.name ?: "User",
-            activeRemindersCount = activeReminders.size,
-            pendingLedgerCount = pendingLedgers.size,
+            activeRemindersCount = rCount,
+            pendingLedgerCount = lCount,
             pendingLedgerAmount = pendingLedgers.sumOf { it.amount ?: 0.0 },
             completedTodayCount = reminders.count { it.status == ReminderStatus.COMPLETED },
-            nextReminder = activeReminders.minByOrNull { it.scheduledTime },
+            upcomingReminders = upNext,
+            topPendingLedgers = topLedgers,
             timeOfDay = timeOfDay,
-            currentDate = LocalDate.now().format(dateFormatter)
+            currentDate = LocalDate.now().format(dateFormatter),
+            dailySummary = summary
         )
     }.flowOn(Dispatchers.Default)
         .stateIn(

@@ -53,7 +53,6 @@ class AddEditReminderViewModel @Inject constructor(
     private val _saveCompleted = MutableSharedFlow<Unit>()
     val saveCompleted: SharedFlow<Unit> = _saveCompleted.asSharedFlow()
 
-    // NEW: Flow for emitting validation errors to the UI
     private val _showError = MutableSharedFlow<String>()
     val showError: SharedFlow<String> = _showError.asSharedFlow()
 
@@ -84,7 +83,6 @@ class AddEditReminderViewModel @Inject constructor(
             val scheduledLdt = selectedDate.atTime(selectedHour, selectedMinute).withSecond(0).withNano(0)
             val now = LocalDateTime.now()
 
-            // VALIDATION: Prevent saving if the selected date and time is in the past
             if (scheduledLdt.isBefore(now)) {
                 _showError.emit("Past date and time is not allowed")
                 return@launch

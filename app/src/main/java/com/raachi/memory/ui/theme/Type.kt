@@ -8,88 +8,97 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.raachi.memory.R
 
-val RaachiPoppinsFontFamily = FontFamily(
-    Font(R.font.poppins_regular, FontWeight.Normal),
-    Font(R.font.poppins_medium, FontWeight.Medium),
-    Font(R.font.poppins_semibold, FontWeight.SemiBold)
+val Nunito = FontFamily(
+    Font(R.font.nunito_regular, FontWeight.Normal),
+    Font(R.font.nunito_medium, FontWeight.Medium),
+    Font(R.font.nunito_semibold, FontWeight.SemiBold),
+    Font(R.font.nunito_bold, FontWeight.Bold),
+    Font(R.font.nunito_extrabold, FontWeight.ExtraBold)
 )
 
 val Typography = Typography(
-    displaySmall = TextStyle(
-        fontFamily = RaachiPoppinsFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 36.sp,
-        lineHeight = 44.sp,
-        letterSpacing = 0.sp
+
+    displayLarge = TextStyle(
+        fontFamily = Nunito,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 42.sp
     ),
+
+    displayMedium = TextStyle(
+        fontFamily = Nunito,
+        fontWeight = FontWeight.Bold,
+        fontSize = 36.sp
+    ),
+
+    headlineLarge = TextStyle(
+        fontFamily = Nunito,
+        fontWeight = FontWeight.Bold,
+        fontSize = 32.sp
+    ),
+
     headlineMedium = TextStyle(
-        fontFamily = RaachiPoppinsFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 28.sp,
-        lineHeight = 36.sp,
-        letterSpacing = 0.sp
+        fontFamily = Nunito,
+        fontWeight = FontWeight.Bold,
+        fontSize = 28.sp
     ),
+
+    headlineSmall = TextStyle(
+        fontFamily = Nunito,
+        fontWeight = FontWeight.Bold,
+        fontSize = 24.sp
+    ),
+
     titleLarge = TextStyle(
-        fontFamily = RaachiPoppinsFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
+        fontFamily = Nunito,
+        fontWeight = FontWeight.Bold,
+        fontSize = 20.sp
     ),
+
     titleMedium = TextStyle(
-        fontFamily = RaachiPoppinsFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.sp
+        fontFamily = Nunito,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 18.sp
     ),
+
     titleSmall = TextStyle(
-        fontFamily = RaachiPoppinsFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.sp
+        fontFamily = Nunito,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 15.sp
     ),
+
     bodyLarge = TextStyle(
-        fontFamily = RaachiPoppinsFontFamily,
+        fontFamily = Nunito,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.sp
+        fontSize = 16.sp
     ),
+
     bodyMedium = TextStyle(
-        fontFamily = RaachiPoppinsFontFamily,
+        fontFamily = Nunito,
         fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.sp
+        fontSize = 14.sp
     ),
+
     bodySmall = TextStyle(
-        fontFamily = RaachiPoppinsFontFamily,
+        fontFamily = Nunito,
         fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.sp
+        fontSize = 12.sp
     ),
+
     labelLarge = TextStyle(
-        fontFamily = RaachiPoppinsFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.sp
+        fontFamily = Nunito,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 14.sp
     ),
+
     labelMedium = TextStyle(
-        fontFamily = RaachiPoppinsFontFamily,
+        fontFamily = Nunito,
         fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.sp
+        fontSize = 12.sp
     ),
+
     labelSmall = TextStyle(
-        fontFamily = RaachiPoppinsFontFamily,
+        fontFamily = Nunito,
         fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.sp
+        fontSize = 11.sp
     )
 )

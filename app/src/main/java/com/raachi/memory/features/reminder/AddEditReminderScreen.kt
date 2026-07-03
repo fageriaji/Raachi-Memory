@@ -22,8 +22,10 @@ import com.raachi.memory.R
 import com.raachi.memory.domain.model.ReminderCategory
 import com.raachi.memory.domain.model.ReminderType
 import com.raachi.memory.ui.components.PrimaryButton
+import com.raachi.memory.ui.components.RaachiSnackbarHost
 import com.raachi.memory.ui.components.SecondaryButton
 import com.raachi.memory.ui.components.SectionHeader
+import com.raachi.memory.ui.components.SnackbarType
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
@@ -40,7 +42,6 @@ fun AddEditReminderScreen(
         onResult = { }
     )
 
-    // Snackbar Host State for displaying validation errors
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -64,7 +65,8 @@ fun AddEditReminderScreen(
     var showDatePicker by remember { mutableStateOf(false) }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) } // Bind Snackbar to Scaffold
+        // Integrate the new Material 3 RaachiSnackbarHost
+        snackbarHost = { RaachiSnackbarHost(hostState = snackbarHostState, type = SnackbarType.ERROR) }
     ) { padding ->
         if (viewModel.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

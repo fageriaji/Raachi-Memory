@@ -12,9 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.raachi.memory.ui.theme.RaachiMemoryTheme
 
+
 @Composable
 fun SectionHeader(
     title: String,
+    count: Int? = null,
     modifier: Modifier = Modifier,
     actionText: String? = null,
     onActionClick: (() -> Unit)? = null
@@ -25,7 +27,7 @@ fun SectionHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = title,
+            text = if (count != null) "$title ($count)" else title,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground
         )
