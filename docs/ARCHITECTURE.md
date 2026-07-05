@@ -40,7 +40,7 @@ A calm, modern, privacy-first personal memory companion.
 -   Kotlin
 -   Jetpack Compose
 -   Material 3
--   Google Poppins
+-   Nunito fonts from res/font
 -   Room
 -   Hilt
 -   Navigation Compose
