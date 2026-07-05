@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import com.raachi.memory.domain.model.EventType
 import com.raachi.memory.domain.model.Gender
 import com.raachi.memory.domain.model.ItemType
+import com.raachi.memory.domain.model.LedgerStatus
 import com.raachi.memory.domain.model.ReminderCategory
 import com.raachi.memory.domain.model.ReminderStatus
 import com.raachi.memory.domain.model.ReminderType
@@ -32,6 +33,12 @@ class Converters {
 
     @TypeConverter
     fun toReminderStatus(value: String): ReminderStatus = ReminderStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromLedgerStatus(value: LedgerStatus): String = value.name
+
+    @TypeConverter
+    fun toLedgerStatus(value: String): LedgerStatus = LedgerStatus.valueOf(value)
 
     @TypeConverter
     fun fromItemType(value: ItemType): String = value.name

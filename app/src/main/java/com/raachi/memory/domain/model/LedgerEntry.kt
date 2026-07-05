@@ -7,9 +7,11 @@ data class LedgerEntry(
     val itemType: ItemType,
     val itemName: String?,
     val amount: Double?,
-    val dueDate: Long?,
-    val returned: Boolean,
-    val returnedDate: Long?,
+    val borrowDateTime: Long,
+    val dueDateTime: Long?, // Reverted to nullable to preserve legacy records safely
+    val status: LedgerStatus,
+    val returnedDateTime: Long?,
     val notes: String?,
-    val createdAt: Long
+    val createdAt: Long,
+    val updatedAt: Long
 )

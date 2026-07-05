@@ -16,26 +16,30 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): RaachiDatabase {
+    fun provideDatabase(
+        @ApplicationContext context: Context
+    ): RaachiDatabase {
         return Room.databaseBuilder(
             context,
             RaachiDatabase::class.java,
             RaachiDatabase.DATABASE_NAME
-        ).build()
+        )
+            .addMigrations(RaachiDatabase.MIGRATION_1_2)
+            .build()
     }
 
     @Provides
-    fun provideUserDao(db: RaachiDatabase) = db.userDao
+    fun provideUserDao(database: RaachiDatabase) = database.userDao
 
     @Provides
-    fun provideSettingsDao(db: RaachiDatabase) = db.settingsDao
+    fun provideSettingsDao(database: RaachiDatabase) = database.settingsDao
 
     @Provides
-    fun provideReminderDao(db: RaachiDatabase) = db.reminderDao
+    fun provideReminderDao(database: RaachiDatabase) = database.reminderDao
 
     @Provides
-    fun provideLedgerDao(db: RaachiDatabase) = db.ledgerDao
+    fun provideLedgerDao(database: RaachiDatabase) = database.ledgerDao
 
     @Provides
-    fun provideActivityDao(db: RaachiDatabase) = db.activityDao
+    fun provideActivityDao(database: RaachiDatabase) = database.activityDao
 }

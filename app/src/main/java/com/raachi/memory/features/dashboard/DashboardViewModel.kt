@@ -3,6 +3,7 @@ package com.raachi.memory.features.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raachi.memory.domain.model.LedgerEntry
+import com.raachi.memory.domain.model.LedgerStatus
 import com.raachi.memory.domain.model.Reminder
 import com.raachi.memory.domain.model.ReminderStatus
 import com.raachi.memory.domain.repository.LedgerRepository
@@ -62,7 +63,7 @@ class DashboardViewModel @Inject constructor(
     ) { user, reminders, ledgers ->
 
         val activeReminders = reminders.filter { it.status == ReminderStatus.ACTIVE }
-        val pendingLedgers = ledgers.filter { !it.returned }
+        val pendingLedgers = ledgers.filter { it.status == LedgerStatus.PENDING }
 
         val hour = LocalTime.now().hour
         val timeOfDay = when (hour) {
@@ -73,7 +74,7 @@ class DashboardViewModel @Inject constructor(
         }
 
         val upNext = activeReminders.sortedBy { it.nextTrigger }.take(2)
-        val topLedgers = pendingLedgers.sortedBy { it.dueDate }.take(2)
+        val topLedgers = pendingLedgers.sortedBy { it.dueDateTime }.take(2)
 
         val rCount = activeReminders.size
         val lCount = pendingLedgers.size
