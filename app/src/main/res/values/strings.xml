@@ -108,4 +108,71 @@
         <string name="height_cm_optional">Height (cm)</string>
         <string name="weight_kg_optional">Weight (kg)</string>
         <string name="finish">Finish</string>
+
+        <string name="ledger_search_label">Search by person, mobile or item</string>
+        <string name="ledger_sort_label">Sort by</string>
+
+        <string name="ledger_filter_all">All</string>
+        <string name="ledger_filter_pending">Pending</string>
+        <string name="ledger_filter_returned">Returned</string>
+        <string name="ledger_filter_overdue">Overdue</string>
+
+        <string name="ledger_sort_due_earliest">Due date: earliest first</string>
+        <string name="ledger_sort_due_latest">Due date: latest first</string>
+        <string name="ledger_sort_person_name">Person name: A to Z</string>
+        <string name="ledger_sort_recently_added">Recently added</string>
+
+        <string name="ledger_empty_title">No ledger entries yet</string>
+        <string name="ledger_empty_message">Add a borrow or lend entry to track it here.</string>
+
+        <string name="ledger_item_type_money">Money</string>
+        <string name="ledger_item_type_book">Book</string>
+        <string name="ledger_item_type_charger">Charger</string>
+        <string name="ledger_item_type_documents">Documents</string>
+        <string name="ledger_item_type_other">Other</string>
+
+        <string name="ledger_item_format">%1$s: %2$s</string>
+        <string name="ledger_amount_format">₹%.2f</string>
+        <string name="ledger_borrowed_datetime_format">Borrowed: %1$s at %2$s</string>
+        <string name="ledger_due_datetime_format">Due: %1$s at %2$s</string>
+        <string name="ledger_due_not_set">Due: Not set</string>
+        <string name="not_set">Not set</string>
+
+        <string name="ledger_entry_title">Ledger entry</string>
+        <string name="ledger_add_title">Add ledger entry</string>
+        <string name="ledger_person_name">Person name</string>
+        <string name="ledger_mobile_number_optional">Mobile number (optional)</string>
+        <string name="ledger_item_type">Item type</string>
+        <string name="ledger_item_name">Item name</string>
+        <string name="ledger_amount_optional">Amount (optional)</string>
+        <string name="ledger_borrow_date">Borrow date</string>
+        <string name="ledger_borrow_time">Borrow time</string>
+        <string name="ledger_due_date">Due date</string>
+        <string name="ledger_due_time">Due time</string>
+        <string name="ledger_notes_optional">Notes (optional)</string>
+        <string name="ledger_apply_time">Apply time</string>
+
+        <string name="ledger_edit">Edit</string>
+        <string name="ledger_mark_returned">Mark returned</string>
+        <string name="ledger_delete_title">Delete ledger entry?</string>
+        <string name="ledger_delete_message">Delete the entry for %1$s?</string>
+
+        <string name="ledger_saved_success">Ledger entry saved.</string>
+        <string name="ledger_updated_success">Ledger entry updated.</string>
+        <string name="ledger_returned_success">Entry marked as returned.</string>
+        <string name="ledger_deleted_success">Ledger entry deleted.</string>
+
+        <string name="ledger_error_person_name_required">Person name is required.</string>
+        <string name="ledger_error_item_name_required">Item name is required.</string>
+        <string name="ledger_error_mobile_invalid">Enter a valid 10-digit mobile number.</string>
+        <string name="ledger_error_amount_invalid">Amount must be a valid non-negative number.</string>
+        <string name="ledger_error_due_before_borrow">Due date and time cannot be earlier than borrow date and time.</string>
+        <string name="ledger_error_save">Unable to save the ledger entry. Please try again.</string>
+        <string name="ledger_error_delete">Unable to delete the ledger entry. Please try again.</string>
+        <string name="ledger_error_mark_returned">Unable to mark the entry as returned. Please try again.</string>
+        <string name="ledger_error_not_found">Ledger entry was not found.</string>
+        <string name="ledger_person_format">%1$s</string>
+
+        <string name="ledger_amount_required">Amount</string>
+        <string name="ledger_error_amount_required">Amount is required for money entries.</string>
 </resources>

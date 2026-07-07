@@ -2,11 +2,14 @@ package com.raachi.memory.domain.util
 
 import com.raachi.memory.domain.model.ReminderType
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 object DateTimeUtils {
+
+    private val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
     private val timeFormatter = DateTimeFormatter.ofPattern("hh:mm a")
 
     fun calculateNextTrigger(
@@ -25,11 +28,42 @@ object DateTimeUtils {
                 ReminderType.INTERVAL -> next.plusHours((intervalHours ?: 1).toLong())
             }
         }
+
         return next.toInstant().toEpochMilli()
     }
 
+    fun formatDate(timeMillis: Long): String {
+        return Instant.ofEpochMilli(timeMillis)
+            .atZone(ZoneId.systemDefault())
+            .format(dateFormatter)
+    }
+
     fun formatTime(timeMillis: Long): String {
-        val zdt = Instant.ofEpochMilli(timeMillis).atZone(ZoneId.systemDefault())
-        return zdt.format(timeFormatter)
+        return Instant.ofEpochMilli(timeMillis)
+            .atZone(ZoneId.systemDefault())
+            .format(timeFormatter)
+    }
+
+    fun todayStartMillis(): Long {
+        return LocalDate.now()
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+    }
+
+    fun combineDateAndTime(
+        dateMillis: Long,
+        hour: Int,
+        minute: Int
+    ): Long {
+        val localDate = Instant.ofEpochMilli(dateMillis)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+
+        return localDate
+            .atTime(hour, minute)
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
     }
 }

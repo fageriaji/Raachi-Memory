@@ -394,10 +394,23 @@ fun PolishedReminderCard(reminder: Reminder) {
 
 @Composable
 fun PolishedLedgerCard(entry: LedgerEntry) {
+    val itemName = entry.itemName?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.not_set)
+
+    val dueText = entry.dueDateTime?.let { dueDateTime ->
+        stringResource(
+            R.string.ledger_due_datetime_format,
+            DateTimeUtils.formatDate(dueDateTime),
+            DateTimeUtils.formatTime(dueDateTime)
+        )
+    } ?: stringResource(R.string.ledger_due_not_set)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -417,30 +430,54 @@ fun PolishedLedgerCard(entry: LedgerEntry) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
-                        text = stringResource(R.string.pending_item),
+                        text = stringResource(
+                            R.string.ledger_person_format,
+                            entry.personName
+                        ),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
                     Text(
-                        text = stringResource(R.string.due_soon),
+                        text = itemName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = dueText,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
                 }
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.errorContainer)
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.amount_format,entry.amount ?: 0.0),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontWeight = FontWeight.Bold
-                    )
+
+                entry.amount?.let { amount ->
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.ledger_amount_format,
+                                amount
+                            ),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

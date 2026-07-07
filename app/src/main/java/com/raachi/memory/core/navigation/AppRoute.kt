@@ -1,8 +1,5 @@
 package com.raachi.memory.core.navigation
 
-/**
- * App-level routes available for the application.
- */
 sealed interface AppRoute {
     val route: String
 
@@ -19,8 +16,11 @@ sealed interface AppRoute {
     }
 
     data object OptionalProfile : AppRoute {
-        override val route = "optional_profile/{name}"
-        fun createRoute(name: String) = "optional_profile/$name"
+        override val route: String = "optional_profile/{name}"
+
+        fun createRoute(name: String): String {
+            return "optional_profile/$name"
+        }
     }
 
     data object Dashboard : AppRoute {
@@ -31,14 +31,24 @@ sealed interface AppRoute {
         override val route: String = "reminder"
     }
 
-    // Phase 6 addition
     data object AddEditReminder : AppRoute {
-        override val route = "add_edit_reminder/{reminderId}"
-        fun createRoute(reminderId: Int = -1) = "add_edit_reminder/$reminderId"
+        override val route: String = "add_edit_reminder/{reminderId}"
+
+        fun createRoute(reminderId: Int = -1): String {
+            return "add_edit_reminder/$reminderId"
+        }
     }
 
     data object Ledger : AppRoute {
         override val route: String = "ledger"
+    }
+
+    data object AddEditLedger : AppRoute {
+        override val route: String = "add_edit_ledger/{ledgerId}"
+
+        fun createRoute(ledgerId: Int = -1): String {
+            return "add_edit_ledger/$ledgerId"
+        }
     }
 
     data object Activity : AppRoute {
@@ -53,3 +63,4 @@ sealed interface AppRoute {
         override val route: String = "settings"
     }
 }
+

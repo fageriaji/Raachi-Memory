@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.raachi.memory.features.activity.ActivityScreen
 import com.raachi.memory.features.dashboard.DashboardScreen
+import com.raachi.memory.features.ledger.AddEditLedgerScreen
 import com.raachi.memory.features.ledger.LedgerScreen
 import com.raachi.memory.features.profile.NameInputScreen
 import com.raachi.memory.features.profile.OptionalProfileScreen
@@ -46,7 +47,10 @@ fun RaachiNavHost(
         modifier = modifier,
         bottomBar = {
             if (currentRoute in bottomNavRoutes) {
-                RaachiBottomBar(navController = navController, currentRoute = currentRoute)
+                RaachiBottomBar(
+                    navController = navController,
+                    currentRoute = currentRoute
+                )
             }
         }
     ) { innerPadding ->
@@ -59,35 +63,53 @@ fun RaachiNavHost(
                 SplashScreen(
                     onNavigateToWelcome = {
                         navController.navigate(AppRoute.Welcome.route) {
-                            popUpTo(AppRoute.Splash.route) { inclusive = true }
+                            popUpTo(AppRoute.Splash.route) {
+                                inclusive = true
+                            }
                         }
                     },
                     onNavigateToDashboard = {
                         navController.navigate(AppRoute.Dashboard.route) {
-                            popUpTo(AppRoute.Splash.route) { inclusive = true }
+                            popUpTo(AppRoute.Splash.route) {
+                                inclusive = true
+                            }
                         }
                     }
                 )
             }
 
             composable(AppRoute.Welcome.route) {
-                WelcomeScreen(onGetStarted = { navController.navigate(AppRoute.NameInput.route) })
+                WelcomeScreen(
+                    onGetStarted = {
+                        navController.navigate(AppRoute.NameInput.route)
+                    }
+                )
             }
 
             composable(AppRoute.NameInput.route) {
-                NameInputScreen(onContinue = { name ->
-                    navController.navigate(AppRoute.OptionalProfile.createRoute(name))
-                })
+                NameInputScreen(
+                    onContinue = { name ->
+                        navController.navigate(
+                            AppRoute.OptionalProfile.createRoute(name)
+                        )
+                    }
+                )
             }
 
             composable(
                 route = AppRoute.OptionalProfile.route,
-                arguments = listOf(navArgument("name") { type = NavType.StringType })
+                arguments = listOf(
+                    navArgument("name") {
+                        type = NavType.StringType
+                    }
+                )
             ) {
                 OptionalProfileScreen(
                     onComplete = {
                         navController.navigate(AppRoute.Dashboard.route) {
-                            popUpTo(AppRoute.Welcome.route) { inclusive = true }
+                            popUpTo(AppRoute.Welcome.route) {
+                                inclusive = true
+                            }
                         }
                     }
                 )
@@ -95,43 +117,107 @@ fun RaachiNavHost(
 
             composable(AppRoute.Dashboard.route) {
                 DashboardScreen(
-                    onNavigateToReminder = { navController.navigate(AppRoute.AddEditReminder.createRoute(-1)) },
-                    onNavigateToLedger = { /* Implement Ledger Add functionality in Phase 7 */ }
+                    onNavigateToReminder = {
+                        navController.navigate(
+                            AppRoute.AddEditReminder.createRoute(-1)
+                        )
+                    },
+                    onNavigateToLedger = {
+                        navController.navigate(
+                            AppRoute.AddEditLedger.createRoute(-1)
+                        )
+                    }
                 )
             }
 
             composable(AppRoute.Reminder.route) {
                 ReminderScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToAdd = { navController.navigate(AppRoute.AddEditReminder.createRoute(-1)) },
-                    onNavigateToEdit = { id -> navController.navigate(AppRoute.AddEditReminder.createRoute(id)) }
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateToAdd = {
+                        navController.navigate(
+                            AppRoute.AddEditReminder.createRoute(-1)
+                        )
+                    },
+                    onNavigateToEdit = { reminderId ->
+                        navController.navigate(
+                            AppRoute.AddEditReminder.createRoute(reminderId)
+                        )
+                    }
                 )
             }
 
             composable(
                 route = AppRoute.AddEditReminder.route,
-                arguments = listOf(navArgument("reminderId") { type = NavType.IntType })
+                arguments = listOf(
+                    navArgument("reminderId") {
+                        type = NavType.IntType
+                    }
+                )
             ) {
-                AddEditReminderScreen(onNavigateBack = { navController.popBackStack() })
+                AddEditReminderScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
 
             composable(AppRoute.Ledger.route) {
-                LedgerScreen(onNavigateBack = { navController.popBackStack() })
+                LedgerScreen(
+                    onNavigateToAdd = {
+                        navController.navigate(
+                            AppRoute.AddEditLedger.createRoute(-1)
+                        )
+                    },
+                    onNavigateToEdit = { ledgerId ->
+                        navController.navigate(
+                            AppRoute.AddEditLedger.createRoute(ledgerId)
+                        )
+                    }
+                )
+            }
+
+            composable(
+                route = AppRoute.AddEditLedger.route,
+                arguments = listOf(
+                    navArgument("ledgerId") {
+                        type = NavType.IntType
+                    }
+                )
+            ) {
+                AddEditLedgerScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
 
             composable(AppRoute.Activity.route) {
-                ActivityScreen(onNavigateBack = { navController.popBackStack() })
+                ActivityScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
 
             composable(AppRoute.Profile.route) {
                 ProfileScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToSettings = { navController.navigate(AppRoute.Settings.route) }
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateToSettings = {
+                        navController.navigate(AppRoute.Settings.route)
+                    }
                 )
             }
 
             composable(AppRoute.Settings.route) {
-                SettingsScreen(onNavigateBack = { navController.popBackStack() })
+                SettingsScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }
