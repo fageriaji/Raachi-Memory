@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raachi.memory.R
+import com.raachi.memory.core.ledgeralarm.LedgerAlarmScheduler
 import com.raachi.memory.domain.model.ItemType
 import com.raachi.memory.domain.model.LedgerEntry
 import com.raachi.memory.domain.model.LedgerStatus
@@ -43,6 +44,7 @@ private data class LedgerValidationResult(
 @HiltViewModel
 class AddEditLedgerViewModel @Inject constructor(
     private val ledgerRepository: LedgerRepository,
+    private val ledgerAlarmScheduler: LedgerAlarmScheduler,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -161,6 +163,7 @@ class AddEditLedgerViewModel @Inject constructor(
                 dueDateTime = dueDateTime,
                 status = previousEntry?.status ?: LedgerStatus.PENDING,
                 returnedDateTime = previousEntry?.returnedDateTime,
+                snoozedUntil = previousEntry?.snoozedUntil,
                 notes = state.notes.trim().takeIf { it.isNotBlank() },
                 createdAt = previousEntry?.createdAt ?: now,
                 updatedAt = now
@@ -168,10 +171,12 @@ class AddEditLedgerViewModel @Inject constructor(
 
             try {
                 if (previousEntry == null) {
-                    ledgerRepository.insertEntry(ledgerEntry)
+                    val newId = ledgerRepository.insertEntry(ledgerEntry).toInt()
+                    ledgerAlarmScheduler.schedule(ledgerEntry.copy(id = newId))
                     _messages.emit(R.string.ledger_saved_success)
                 } else {
                     ledgerRepository.updateEntry(ledgerEntry)
+                    ledgerAlarmScheduler.schedule(ledgerEntry)
                     _messages.emit(R.string.ledger_updated_success)
                 }
 

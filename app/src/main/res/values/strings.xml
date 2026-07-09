@@ -175,4 +175,13 @@
 
         <string name="ledger_amount_required">Amount</string>
         <string name="ledger_error_amount_required">Amount is required for money entries.</string>
+
+        <string name="ledger_notification_channel_name">Ledger reminders</string>
+        <string name="ledger_notification_channel_description">Notifications for pending ledger entries.</string>
+        <string name="ledger_notification_title">%1$s — Ledger reminder</string>
+        <string name="ledger_notification_content">%1$s Due: %2$s at %3$s</string>
+        <string name="ledger_notification_snooze">Snooze 1 day</string>
+        <string name="ledger_notification_share">Share</string>
+        <string name="ledger_share_chooser_title">Share ledger reminder</string>
+        <string name="ledger_share_message">Hi %1$s, Just a friendly reminder regarding %2$s. Due: %3$s • %4$s Thank you 😊</string>
 </resources>

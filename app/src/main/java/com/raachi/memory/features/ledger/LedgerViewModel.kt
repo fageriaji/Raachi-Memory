@@ -1,9 +1,10 @@
 package com.raachi.memory.features.ledger
 
-import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raachi.memory.R
+import com.raachi.memory.core.ledgeralarm.LedgerAlarmScheduler
+import com.raachi.memory.core.ledgeralarm.LedgerNotificationHelper
 import com.raachi.memory.domain.model.LedgerEntry
 import com.raachi.memory.domain.model.LedgerStatus
 import com.raachi.memory.domain.repository.LedgerRepository
@@ -53,7 +54,9 @@ private data class LedgerControls(
 
 @HiltViewModel
 class LedgerViewModel @Inject constructor(
-    private val ledgerRepository: LedgerRepository
+    private val ledgerRepository: LedgerRepository,
+    private val ledgerAlarmScheduler: LedgerAlarmScheduler,
+    private val ledgerNotificationHelper: LedgerNotificationHelper
 ) : ViewModel() {
 
     private val searchQuery = MutableStateFlow("")
@@ -122,13 +125,20 @@ class LedgerViewModel @Inject constructor(
     fun markAsReturned(entry: LedgerEntry) {
         viewModelScope.launch {
             try {
+                val now = System.currentTimeMillis()
+
                 ledgerRepository.updateEntry(
                     entry.copy(
                         status = LedgerStatus.RETURNED,
-                        returnedDateTime = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis()
+                        returnedDateTime = now,
+                        snoozedUntil = null,
+                        updatedAt = now
                     )
                 )
+
+                ledgerAlarmScheduler.cancel(entry.id)
+                ledgerNotificationHelper.cancelNotification(entry.id)
+
                 _messages.emit(R.string.ledger_returned_success)
             } catch (_: Exception) {
                 _messages.emit(R.string.ledger_error_mark_returned)
@@ -140,6 +150,8 @@ class LedgerViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 ledgerRepository.deleteEntry(entry)
+                ledgerAlarmScheduler.cancel(entry.id)
+                ledgerNotificationHelper.cancelNotification(entry.id)
                 _messages.emit(R.string.ledger_deleted_success)
             } catch (_: Exception) {
                 _messages.emit(R.string.ledger_error_delete)

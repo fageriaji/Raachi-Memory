@@ -24,7 +24,10 @@ object DatabaseModule {
             RaachiDatabase::class.java,
             RaachiDatabase.DATABASE_NAME
         )
-            .addMigrations(RaachiDatabase.MIGRATION_1_2)
+            .addMigrations(
+                RaachiDatabase.MIGRATION_1_2,
+                RaachiDatabase.MIGRATION_2_3
+            )
             .build()
     }
 
