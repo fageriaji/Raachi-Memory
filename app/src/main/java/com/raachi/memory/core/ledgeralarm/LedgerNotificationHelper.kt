@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -35,6 +36,13 @@ class LedgerNotificationHelper @Inject constructor(
         val dueDateTime = entry.dueDateTime ?: return
         val itemDescription = itemDescription(entry)
 
+        val notificationText = context.getString(
+            R.string.ledger_notification_content,
+            itemDescription,
+            DateTimeUtils.formatDate(dueDateTime),
+            DateTimeUtils.formatTime(dueDateTime)
+        )
+
         val notification = NotificationCompat.Builder(
             context,
             CHANNEL_ID
@@ -46,24 +54,8 @@ class LedgerNotificationHelper @Inject constructor(
                     entry.personName
                 )
             )
-            .setContentText(
-                context.getString(
-                    R.string.ledger_notification_content,
-                    itemDescription,
-                    DateTimeUtils.formatDate(dueDateTime),
-                    DateTimeUtils.formatTime(dueDateTime)
-                )
-            )
-            .setStyle(
-                NotificationCompat.BigTextStyle().bigText(
-                    context.getString(
-                        R.string.ledger_notification_content,
-                        itemDescription,
-                        DateTimeUtils.formatDate(dueDateTime),
-                        DateTimeUtils.formatTime(dueDateTime)
-                    )
-                )
-            )
+            .setContentText(notificationText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(notificationText))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(createOpenAppPendingIntent(entry.id))
@@ -103,18 +95,34 @@ class LedgerNotificationHelper @Inject constructor(
     fun shareLedgerReminder(entry: LedgerEntry) {
         val dueDateTime = entry.dueDateTime ?: return
 
+        val message = context.getString(
+            R.string.ledger_share_message,
+            entry.personName,
+            itemDescription(entry),
+            DateTimeUtils.formatDate(dueDateTime),
+            DateTimeUtils.formatTime(dueDateTime)
+        )
+
+        val whatsappIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            setPackage(WHATSAPP_PACKAGE)
+            putExtra(Intent.EXTRA_TEXT, message)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        try {
+            context.startActivity(whatsappIntent)
+        } catch (_: ActivityNotFoundException) {
+            openAndroidSharesheet(message)
+        } catch (_: Exception) {
+            openAndroidSharesheet(message)
+        }
+    }
+
+    private fun openAndroidSharesheet(message: String) {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(
-                Intent.EXTRA_TEXT,
-                context.getString(
-                    R.string.ledger_share_message,
-                    entry.personName,
-                    itemDescription(entry),
-                    DateTimeUtils.formatDate(dueDateTime),
-                    DateTimeUtils.formatTime(dueDateTime)
-                )
-            )
+            putExtra(Intent.EXTRA_TEXT, message)
         }
 
         val chooserIntent = Intent.createChooser(
@@ -245,6 +253,7 @@ class LedgerNotificationHelper @Inject constructor(
         const val ACTION_SHARE =
             "com.raachi.memory.action.LEDGER_SHARE"
 
+        private const val WHATSAPP_PACKAGE = "com.whatsapp"
         private const val NOTIFICATION_ID_OFFSET = 300_000
         private const val ACTION_REQUEST_CODE_OFFSET = 400_000
     }

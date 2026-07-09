@@ -247,38 +247,19 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            SectionHeader(title = stringResource(R.string.pending_ledger))
+            SectionHeader(title = stringResource(R.string.upcoming_due_entries))
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (state.topPendingLedgers.isNotEmpty()) {
                 state.topPendingLedgers.forEach { entry ->
                     PolishedLedgerCard(entry)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
-            } else if (state.pendingLedgerCount > 0) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Text(
-                            text = stringResource(R.string.items_pending_format, state.pendingLedgerCount),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = stringResource(R.string.total_amount_format, state.pendingLedgerAmount),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
             } else {
                 EmptyState(
                     icon = Icons.Default.List,
-                    title = stringResource(R.string.all_settled),
-                    message = stringResource(R.string.nothing_pending)
+                    title = stringResource(R.string.no_upcoming_due_entries),
+                    message = stringResource(R.string.no_upcoming_due_entries_message)
                 )
             }
 

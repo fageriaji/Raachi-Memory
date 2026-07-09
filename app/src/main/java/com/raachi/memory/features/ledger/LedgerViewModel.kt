@@ -159,6 +159,16 @@ class LedgerViewModel @Inject constructor(
         }
     }
 
+    fun shareEntry(entry: LedgerEntry) {
+        viewModelScope.launch {
+            try {
+                ledgerNotificationHelper.shareLedgerReminder(entry)
+            } catch (_: Exception) {
+                _messages.emit(R.string.ledger_share_error)
+            }
+        }
+    }
+
     private fun LedgerEntry.matchesSearch(query: String): Boolean {
         if (query.isBlank()) {
             return true

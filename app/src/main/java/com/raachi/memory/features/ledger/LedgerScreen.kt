@@ -145,6 +145,9 @@ fun LedgerScreen(
                             onMarkReturned = {
                                 viewModel.markAsReturned(entry)
                             },
+                            onShare = {
+                                viewModel.shareEntry(entry)
+                            },
                             onDelete = {
                                 entryPendingDeletion = entry
                             }
@@ -281,6 +284,7 @@ private fun LedgerEntryCard(
     currentTimeMillis: Long,
     onEdit: () -> Unit,
     onMarkReturned: () -> Unit,
+    onShare: () -> Unit,
     onDelete: () -> Unit
 ) {
     val statusResId = entry.statusResId(currentTimeMillis)
@@ -385,6 +389,14 @@ private fun LedgerEntryCard(
                 TextButton(onClick = onMarkReturned) {
                     Text(stringResource(R.string.ledger_mark_returned))
                 }
+
+                TextButton(onClick = onShare) {
+                    Text(stringResource(R.string.ledger_notification_share))
+                }
+            }
+
+            TextButton(onClick = onDelete) {
+                Text(stringResource(R.string.delete))
             }
 
             TextButton(onClick = onDelete) {
