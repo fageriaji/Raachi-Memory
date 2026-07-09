@@ -50,9 +50,12 @@ import com.raachi.memory.ui.components.SecondaryButton
 import com.raachi.memory.ui.components.SectionHeader
 import com.raachi.memory.ui.components.SnackbarType
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
-@OptIn(ExperimentalMaterial3Api::class)
-
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalLayoutApi::class
+)
 @Composable
 fun AddEditLedgerScreen(
     onNavigateBack: () -> Unit,
