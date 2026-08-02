@@ -1,0 +1,7 @@
+<resources>
+    <color name="launcher_background">#FFFFFF</color>
+    <color name="brand_navy">#021964</color>
+    <color name="brand_orange">#FD7B07</color>
+    <color name="launcher_foreground">#021964</color>
+    <color name="ledger_main">#7400B8</color>
+</resources>

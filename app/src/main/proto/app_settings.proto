@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option java_package = "com.raachi.memory.data.settings";
+option java_multiple_files = true;
+
+message AppSettings {
+  bool onboarding_completed = 1;
+  ThemeModeProto theme_mode = 2;
+  SoundModeProto reminder_sound = 3;
+  int32 default_snooze_minutes = 4;
+}
+
+enum ThemeModeProto {
+  THEME_MODE_UNSPECIFIED = 0;
+  THEME_MODE_SYSTEM = 1;
+  THEME_MODE_LIGHT = 2;
+  THEME_MODE_DARK = 3;
+}
+
+enum SoundModeProto {
+  SOUND_MODE_UNSPECIFIED = 0;
+  SOUND_MODE_ENABLED = 1;
+  SOUND_MODE_DISABLED = 2;
+}
