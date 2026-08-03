@@ -13,31 +13,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.HealthAndSafety
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -45,7 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raachi.memory.R
-import com.raachi.memory.core.ui.RaachiWordmark
+import com.raachi.memory.core.ui.RaachiSectionTopBar
+import com.raachi.memory.core.ui.ProfileAvatar
 import com.raachi.memory.domain.model.UserProfile
 import java.time.Instant
 import java.time.ZoneId
@@ -54,7 +50,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onBack: () -> Unit,
+    onOpenDrawer: () -> Unit,
     onEditProfile: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel(),
@@ -64,20 +60,9 @@ fun ProfileScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = { RaachiWordmark() },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
-                ),
+            RaachiSectionTopBar(
+                title = stringResource(R.string.nav_profile),
+                onOpenDrawer = onOpenDrawer,
             )
         },
     ) { innerPadding ->
@@ -139,17 +124,19 @@ private fun ProfileContent(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(
-                modifier = Modifier
-                    .size(112.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center,
+                modifier = Modifier.clickable(onClick = onEditProfile),
             ) {
-                Text(
-                    text = profile.name.initials(),
+                ProfileAvatar(name = profile.name, photoUri = profile.profilePhotoUri, size = 112.dp)
+                Surface(
+                    modifier = Modifier.align(Alignment.BottomEnd).size(36.dp),
                     color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.headlineLarge,
-                )
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = MaterialTheme.shapes.extraLarge,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.edit_personal_details_title), modifier = Modifier.size(18.dp))
+                    }
+                }
             }
             Text(
                 text = profile.name,
@@ -294,12 +281,6 @@ private fun ProfileSectionTitle(text: String) {
         style = MaterialTheme.typography.labelLarge,
     )
 }
-
-private fun String.initials(): String = trim()
-    .split(Regex("\\s+"))
-    .filter(String::isNotBlank)
-    .take(2)
-    .joinToString(separator = "") { it.take(1).uppercase() }
 
 private fun Long.toMemberSince(): String = Instant.ofEpochMilli(this)
     .atZone(ZoneId.systemDefault())

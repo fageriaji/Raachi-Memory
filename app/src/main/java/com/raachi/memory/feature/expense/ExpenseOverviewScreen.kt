@@ -23,9 +23,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -50,6 +52,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,12 +61,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.raachi.memory.core.ui.ExpenseCreditColor
-import com.raachi.memory.core.ui.ExpenseDebitColor
 import com.raachi.memory.core.ui.ExpenseMainColor
-import com.raachi.memory.core.ui.AppSection
-import com.raachi.memory.core.ui.RaachiBottomBar
 import com.raachi.memory.core.ui.RaachiSectionTopBar
+import com.raachi.memory.core.ui.DrawerDestination
+import com.raachi.memory.core.ui.RaachiBottomBar
 import com.raachi.memory.core.ui.expenseCategoryEmoji
 import com.raachi.memory.core.ui.expenseTypeColor
 import com.raachi.memory.domain.model.ExpenseAccount
@@ -78,8 +80,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpenseOverviewScreen(
-    onBack: () -> Unit,
-    onOpenSection: (AppSection) -> Unit,
+    onOpenDrawer: () -> Unit,
+    onOpenPrimary: (DrawerDestination) -> Unit,
     onAddTransaction: () -> Unit,
     onEditTransaction: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -128,7 +130,7 @@ fun ExpenseOverviewScreen(
         topBar = {
             RaachiSectionTopBar(
                 title = "Daily Expenses",
-                onBack = onBack,
+                onOpenDrawer = onOpenDrawer,
                 actions = {
                     IconButton(onClick = {
                         accountEditor = null
@@ -148,12 +150,7 @@ fun ExpenseOverviewScreen(
                 ) { Icon(Icons.Outlined.Add, contentDescription = "Add transaction") }
             }
         },
-        bottomBar = {
-            RaachiBottomBar(
-                selected = AppSection.EXPENSES,
-                onSelected = onOpenSection,
-            )
-        },
+        bottomBar = { RaachiBottomBar(DrawerDestination.EXPENSES, onOpenPrimary) },
     ) { innerPadding ->
         when {
             state.isLoading -> Box(
@@ -206,6 +203,7 @@ private fun ExpenseOverviewContent(
                 todaySpent = state.todayDebitPaise,
                 monthSpent = state.monthDebitPaise,
                 monthCredit = state.monthCreditPaise,
+                accountCount = state.accounts.size,
                 modifier = Modifier.padding(horizontal = 20.dp),
             )
         }
@@ -280,35 +278,128 @@ private fun BalanceHero(
     todaySpent: Long,
     monthSpent: Long,
     monthCredit: Long,
+    accountCount: Int,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primary,
-        contentColor = Color.White,
-        shape = RoundedCornerShape(8.dp),
-    ) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Available balance", style = MaterialTheme.typography.bodyLarge)
-            Text(formatExpenseCurrency(totalBalance), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                MiniBalanceStat("Today", todaySpent, ExpenseDebitColor, Modifier.weight(1f))
-                MiniBalanceStat("This month", monthSpent, ExpenseDebitColor, Modifier.weight(1f))
-                MiniBalanceStat("Credits", monthCredit, ExpenseCreditColor, Modifier.weight(1f))
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = if (isDark) AvailableBalanceDark else AvailableBalanceLight,
+            contentColor = Color.White,
+            shape = RoundedCornerShape(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text("Available balance", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.82f))
+                    Text(
+                        formatExpenseCurrency(totalBalance),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        if (accountCount == 1) "1 active account" else "$accountCount active accounts",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.72f),
+                    )
+                }
+                Surface(
+                    modifier = Modifier.size(48.dp),
+                    color = AvailableBalanceOrange.copy(alpha = 0.18f),
+                    contentColor = AvailableBalanceOrange,
+                    shape = RoundedCornerShape(8.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.AccountBalance, contentDescription = null)
+                    }
+                }
             }
+        }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            ExpenseSummaryStat(
+                label = "Today",
+                value = todaySpent,
+                icon = Icons.Outlined.Payments,
+                containerColor = if (isDark) TodayContainerDark else TodayContainerLight,
+                accentColor = if (isDark) TodayAccentDark else TodayAccentLight,
+                modifier = Modifier.weight(1f),
+            )
+            ExpenseSummaryStat(
+                label = "This month",
+                value = monthSpent,
+                icon = Icons.Outlined.CalendarMonth,
+                containerColor = if (isDark) MonthContainerDark else MonthContainerLight,
+                accentColor = if (isDark) MonthAccentDark else MonthAccentLight,
+                modifier = Modifier.weight(1f),
+            )
+            ExpenseSummaryStat(
+                label = "Credits",
+                value = monthCredit,
+                icon = Icons.Outlined.TrendingUp,
+                containerColor = if (isDark) CreditContainerDark else CreditContainerLight,
+                accentColor = if (isDark) CreditAccentDark else CreditAccentLight,
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }
 
 @Composable
-private fun MiniBalanceStat(label: String, value: Long, color: Color, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier, color = Color.White.copy(alpha = 0.12f), shape = RoundedCornerShape(6.dp)) {
-        Column(modifier = Modifier.padding(10.dp)) {
-            Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 11.sp)
-            Text(formatExpenseCurrency(value), color = color.copy(alpha = 0.95f), maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Bold)
+private fun ExpenseSummaryStat(
+    label: String,
+    value: Long,
+    icon: ImageVector,
+    containerColor: Color,
+    accentColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Surface(modifier = modifier.height(112.dp), color = containerColor, shape = RoundedCornerShape(8.dp)) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 11.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Icon(icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(22.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    label,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    formatExpenseCurrency(value),
+                    color = accentColor,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
+
+private val AvailableBalanceLight = Color(0xFF122878)
+private val AvailableBalanceDark = Color(0xFF203A8F)
+private val AvailableBalanceOrange = Color(0xFFFFA43A)
+private val TodayContainerLight = Color(0xFFFFE8E3)
+private val TodayContainerDark = Color(0xFF35263D)
+private val TodayAccentLight = Color(0xFFF95738)
+private val TodayAccentDark = Color(0xFFFF7865)
+private val MonthContainerLight = Color(0xFFFFF1D6)
+private val MonthContainerDark = Color(0xFF263353)
+private val MonthAccentLight = Color(0xFFE99A22)
+private val MonthAccentDark = Color(0xFFFFC857)
+private val CreditContainerLight = Color(0xFFDDF4EC)
+private val CreditContainerDark = Color(0xFF173D3A)
+private val CreditAccentLight = Color(0xFF43AA8B)
+private val CreditAccentDark = Color(0xFF69D4B2)
 
 @Composable
 private fun AccountBalanceCard(

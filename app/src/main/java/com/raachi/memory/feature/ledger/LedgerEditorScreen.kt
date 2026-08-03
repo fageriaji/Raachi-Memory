@@ -243,17 +243,6 @@ private fun LedgerEditorContent(
             label = { Text(stringResource(R.string.person_name)) },
             isError = state.validation.personError,
             supportingText = if (state.validation.personError) ({ Text(stringResource(R.string.field_required)) }) else null,
-            colors = fieldColors,
-            singleLine = true,
-        )
-        OutlinedTextField(
-            value = input.mobileNumber,
-            onValueChange = { value -> onUpdate { copy(mobileNumber = value.filter(Char::isDigit).take(10)) } },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.mobile_optional)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            isError = state.validation.mobileError,
-            supportingText = if (state.validation.mobileError) ({ Text(stringResource(R.string.invalid_mobile)) }) else null,
             trailingIcon = {
                 IconButton(
                     onClick = {
@@ -272,6 +261,17 @@ private fun LedgerEditorContent(
                     )
                 }
             },
+            colors = fieldColors,
+            singleLine = true,
+        )
+        OutlinedTextField(
+            value = input.mobileNumber,
+            onValueChange = { value -> onUpdate { copy(mobileNumber = value.filter(Char::isDigit).take(10)) } },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.mobile_optional)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            isError = state.validation.mobileError,
+            supportingText = if (state.validation.mobileError) ({ Text(stringResource(R.string.invalid_mobile)) }) else null,
             colors = fieldColors,
             singleLine = true,
         )

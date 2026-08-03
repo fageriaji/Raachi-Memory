@@ -10,6 +10,7 @@ data class ProfileInput(
     val email: String = "",
     val heightCm: String = "",
     val weightKg: String = "",
+    val profilePhotoUri: String? = null,
 )
 
 enum class ProfileField {

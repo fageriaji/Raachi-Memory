@@ -27,7 +27,7 @@ class SaveProfileUseCase @Inject constructor(
             email = input.email.trim().ifEmpty { null },
             heightCm = input.heightCm.trim().toDoubleOrNull(),
             weightKg = input.weightKg.trim().toDoubleOrNull(),
-            profilePhotoUri = existing?.profilePhotoUri,
+            profilePhotoUri = input.profilePhotoUri,
             createdAtMillis = existing?.createdAtMillis ?: now,
             updatedAtMillis = now,
         )

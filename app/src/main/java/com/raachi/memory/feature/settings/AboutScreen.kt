@@ -40,13 +40,13 @@ import com.raachi.memory.core.ui.RaachiWordmark
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun AboutScreen(onOpenDrawer: () -> Unit, modifier: Modifier = Modifier) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             RaachiSectionTopBar(
                 title = stringResource(R.string.about_raachi_memory),
-                onBack = onBack,
+                onOpenDrawer = onOpenDrawer,
             )
         },
     ) { innerPadding ->

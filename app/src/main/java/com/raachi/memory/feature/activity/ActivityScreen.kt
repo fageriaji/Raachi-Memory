@@ -51,9 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raachi.memory.R
-import com.raachi.memory.core.ui.AppSection
 import com.raachi.memory.core.ui.LedgerMainColor
-import com.raachi.memory.core.ui.RaachiBottomBar
 import com.raachi.memory.core.ui.RaachiSectionTopBar
 import com.raachi.memory.domain.model.ActivityEventType
 import com.raachi.memory.domain.model.ActivityLog
@@ -66,8 +64,7 @@ import java.time.format.FormatStyle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivityScreen(
-    onBack: () -> Unit,
-    onOpenSection: (AppSection) -> Unit,
+    onOpenDrawer: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ActivityViewModel = hiltViewModel(),
 ) {
@@ -79,7 +76,7 @@ fun ActivityScreen(
         topBar = {
             RaachiSectionTopBar(
                 title = stringResource(R.string.nav_activity),
-                onBack = onBack,
+                onOpenDrawer = onOpenDrawer,
                 actions = {
                     IconButton(onClick = { searching = !searching }) {
                         Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.search_activity))
@@ -87,7 +84,6 @@ fun ActivityScreen(
                 },
             )
         },
-        bottomBar = { RaachiBottomBar(AppSection.ACTIVITY, onOpenSection) },
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             if (searching) {

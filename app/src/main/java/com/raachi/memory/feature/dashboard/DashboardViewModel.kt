@@ -28,6 +28,7 @@ sealed interface DashboardUiState {
 
     data class Ready(
         val name: String,
+        val profilePhotoUri: String? = null,
         val greeting: GreetingPeriod,
         val reminderCount: Int = 0,
         val ledgerCount: Int = 0,
@@ -73,6 +74,7 @@ class DashboardViewModel @Inject constructor(
                 val pendingLedger = ledgerEntries.filterNot(LedgerEntry::isReturned)
                 DashboardUiState.Ready(
                     name = it.name,
+                    profilePhotoUri = it.profilePhotoUri,
                     greeting = greeting,
                     reminderCount = current.size,
                     ledgerCount = pendingLedger.size,

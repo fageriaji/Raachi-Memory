@@ -2,6 +2,7 @@ package com.raachi.memory.data.backup
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.util.Base64
 import androidx.room.withTransaction
 import com.raachi.memory.data.activity.ActivityDao
 import com.raachi.memory.data.activity.ActivityLogEntity
@@ -14,6 +15,8 @@ import com.raachi.memory.data.expense.ExpenseDao
 import com.raachi.memory.data.expense.ExpenseTransactionEntity
 import com.raachi.memory.data.profile.UserProfileDao
 import com.raachi.memory.data.profile.UserProfileEntity
+import com.raachi.memory.data.profile.ProfilePhotoStore
+import com.raachi.memory.data.profile.MAX_PROFILE_PHOTO_BYTES
 import com.raachi.memory.data.reminder.ReminderDao
 import com.raachi.memory.data.reminder.ReminderEntity
 import com.raachi.memory.data.reminder.toDomain
@@ -58,6 +61,7 @@ class BackupManager @Inject constructor(
     private val activityDao: ActivityDao,
     private val expenseDao: ExpenseDao,
     private val settingsRepository: AppSettingsRepository,
+    private val profilePhotoStore: ProfilePhotoStore,
     private val reminderScheduler: ReminderScheduler,
     private val ledgerScheduler: LedgerAlertScheduler,
     private val clock: Clock,
@@ -70,10 +74,13 @@ class BackupManager @Inject constructor(
         val expenseAccounts = expenseDao.getAllAccounts()
         val expenseTransactions = expenseDao.getAllTransactions()
         val preferences = settingsRepository.preferences.first()
+        val profilePhotoBase64 = profile?.profilePhotoUri
+            ?.let { profilePhotoStore.read(it) }
+            ?.let { Base64.encodeToString(it, Base64.NO_WRAP) }
         val root = JSONObject()
             .put("schemaVersion", BACKUP_SCHEMA_VERSION)
             .put("exportedAtMillis", clock.millis())
-            .put("profile", profile?.toJson() ?: JSONObject.NULL)
+            .put("profile", profile?.toJson(profilePhotoBase64) ?: JSONObject.NULL)
             .put("reminders", reminders.toJsonArray(ReminderEntity::toJson))
             .put("ledgerEntries", ledgerEntries.toJsonArray(LedgerEntryEntity::toJson))
             .put("activityLogs", activities.toJsonArray(ActivityLogEntity::toJson))
@@ -101,23 +108,32 @@ class BackupManager @Inject constructor(
             }
         } ?: error("Unable to open backup file.")
         val payload = parseBackup(text)
+        val oldProfilePhotoUri = profileDao.getProfile()?.profilePhotoUri
         val oldReminderIds = reminderDao.getAll().map(ReminderEntity::id)
         val oldLedgerIds = ledgerDao.getAll().map(LedgerEntryEntity::id)
+        val restoredPhotoUri = payload.profilePhotoBytes?.let { profilePhotoStore.persist(it) }
+        val restoredProfile = payload.profile?.copy(profilePhotoUri = restoredPhotoUri)
 
-        database.withTransaction {
-            expenseDao.deleteAllTransactions()
-            expenseDao.deleteAllAccounts()
-            activityDao.deleteAll()
-            ledgerDao.deleteAll()
-            reminderDao.deleteAll()
-            profileDao.deleteAll()
-            payload.profile?.let { profileDao.upsert(it) }
-            reminderDao.upsertAll(payload.reminders)
-            ledgerDao.upsertAll(payload.ledgerEntries)
-            activityDao.insertAll(payload.activities)
-            expenseDao.upsertAccounts(payload.expenseAccounts)
-            expenseDao.upsertTransactions(payload.expenseTransactions)
+        try {
+            database.withTransaction {
+                expenseDao.deleteAllTransactions()
+                expenseDao.deleteAllAccounts()
+                activityDao.deleteAll()
+                ledgerDao.deleteAll()
+                reminderDao.deleteAll()
+                profileDao.deleteAll()
+                restoredProfile?.let { profileDao.upsert(it) }
+                reminderDao.upsertAll(payload.reminders)
+                ledgerDao.upsertAll(payload.ledgerEntries)
+                activityDao.insertAll(payload.activities)
+                expenseDao.upsertAccounts(payload.expenseAccounts)
+                expenseDao.upsertTransactions(payload.expenseTransactions)
+            }
+        } catch (error: Throwable) {
+            profilePhotoStore.delete(restoredPhotoUri)
+            throw error
         }
+        if (oldProfilePhotoUri != restoredPhotoUri) profilePhotoStore.delete(oldProfilePhotoUri)
         settingsRepository.replacePreferences(payload.preferences)
 
         oldReminderIds.forEach(reminderScheduler::cancel)
@@ -147,14 +163,25 @@ private data class BackupPayload(
     val expenseAccounts: List<ExpenseAccountEntity>,
     val expenseTransactions: List<ExpenseTransactionEntity>,
     val preferences: AppPreferences,
+    val profilePhotoBytes: ByteArray?,
 )
 
 private fun parseBackup(text: String): BackupPayload {
     val root = JSONObject(text)
     val schemaVersion = root.getInt("schemaVersion")
     require(schemaVersion in MIN_SUPPORTED_BACKUP_SCHEMA_VERSION..BACKUP_SCHEMA_VERSION) { "Unsupported backup version." }
-    val profile = if (root.isNull("profile")) null else root.getJSONObject("profile").toProfile()
+    val profileJson = if (root.isNull("profile")) null else root.getJSONObject("profile")
+    val profile = profileJson?.toProfile()?.copy(profilePhotoUri = null)
     require(profile != null && profile.name.isNotBlank()) { "Backup does not contain a valid profile." }
+    val profilePhotoBytes = if (schemaVersion >= 3) {
+        profileJson?.nullableString("profilePhotoBase64")?.let { encoded ->
+            Base64.decode(encoded, Base64.DEFAULT).also { bytes ->
+                require(bytes.isNotEmpty() && bytes.size <= MAX_PROFILE_PHOTO_BYTES) { "Invalid profile photo." }
+            }
+        }
+    } else {
+        null
+    }
     val expenseAccounts = if (schemaVersion >= 2) {
         root.getJSONArray("expenseAccounts").mapObjects(JSONObject::toExpenseAccount)
     } else {
@@ -179,14 +206,16 @@ private fun parseBackup(text: String): BackupPayload {
         expenseAccounts = expenseAccounts,
         expenseTransactions = expenseTransactions,
         preferences = root.getJSONObject("settings").toPreferences(),
+        profilePhotoBytes = profilePhotoBytes,
     )
 }
 
-private fun UserProfileEntity.toJson() = JSONObject()
+private fun UserProfileEntity.toJson(profilePhotoBase64: String?) = JSONObject()
     .put("id", id).put("name", name).putNullable("dateOfBirth", dateOfBirth)
     .putNullable("mobile", mobile).putNullable("gender", gender).putNullable("email", email)
     .putNullable("heightCm", heightCm).putNullable("weightKg", weightKg)
-    .putNullable("profilePhotoUri", profilePhotoUri).put("createdAtMillis", createdAtMillis)
+    .putNullable("profilePhotoUri", profilePhotoUri).putNullable("profilePhotoBase64", profilePhotoBase64)
+    .put("createdAtMillis", createdAtMillis)
     .put("updatedAtMillis", updatedAtMillis)
 
 private fun JSONObject.toProfile() = UserProfileEntity(
@@ -348,7 +377,7 @@ private fun <T> JSONArray.mapObjects(transform: (JSONObject) -> T): List<T> {
     return List(length()) { index -> transform(getJSONObject(index)) }
 }
 
-private const val BACKUP_SCHEMA_VERSION = 2
+private const val BACKUP_SCHEMA_VERSION = 3
 private const val MIN_SUPPORTED_BACKUP_SCHEMA_VERSION = 1
 private const val MILLIS_PER_DAY = 86_400_000L
 private const val MAX_BACKUP_CHARACTERS = 20 * 1024 * 1024

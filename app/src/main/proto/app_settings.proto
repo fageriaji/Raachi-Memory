@@ -8,6 +8,12 @@ message AppSettings {
   ThemeModeProto theme_mode = 2;
   SoundModeProto reminder_sound = 3;
   int32 default_snooze_minutes = 4;
+  bool app_lock_enabled = 5;
+  string app_lock_passcode_hash = 6;
+  string app_lock_passcode_salt = 7;
+  string app_lock_recovery_hash = 8;
+  string app_lock_recovery_salt = 9;
+  bool app_lock_biometric_enabled = 10;
 }
 
 enum ThemeModeProto {

@@ -60,9 +60,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.res.pluralStringResource
 import com.raachi.memory.R
 import com.raachi.memory.core.designsystem.theme.RaachiBrandNavy
-import com.raachi.memory.core.ui.AppSection
-import com.raachi.memory.core.ui.RaachiBottomBar
 import com.raachi.memory.core.ui.RaachiSectionTopBar
+import com.raachi.memory.core.ui.DrawerDestination
+import com.raachi.memory.core.ui.RaachiBottomBar
 import com.raachi.memory.core.ui.NotificationPermissionControls
 import com.raachi.memory.core.ui.reminderCategoryAccent
 import com.raachi.memory.core.ui.reminderCategoryEmoji
@@ -77,8 +77,8 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReminderListScreen(
-    onBack: () -> Unit,
-    onOpenSection: (AppSection) -> Unit,
+    onOpenDrawer: () -> Unit,
+    onOpenPrimary: (DrawerDestination) -> Unit,
     onAddReminder: () -> Unit,
     onEditReminder: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -116,7 +116,7 @@ fun ReminderListScreen(
         topBar = {
             RaachiSectionTopBar(
                 title = stringResource(R.string.nav_reminders),
-                onBack = onBack,
+                onOpenDrawer = onOpenDrawer,
                 actions = {
                     IconButton(
                         onClick = {
@@ -129,7 +129,7 @@ fun ReminderListScreen(
                 },
             )
         },
-        bottomBar = { RaachiBottomBar(AppSection.REMINDERS, onOpenSection) },
+        bottomBar = { RaachiBottomBar(DrawerDestination.REMINDERS, onOpenPrimary) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddReminder,
@@ -294,12 +294,12 @@ private fun ReminderCard(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Row(verticalAlignment = Alignment.Top) {
                     Surface(
-                        modifier = Modifier.size(54.dp),
+                        modifier = Modifier.size(48.dp),
                         color = categoryAccent.copy(alpha = 0.12f),
                         shape = MaterialTheme.shapes.medium,
                     ) {
@@ -307,11 +307,11 @@ private fun ReminderCard(
                             Text(
                                 text = reminderCategoryEmoji(reminder.category),
                                 color = Color.Unspecified,
-                                fontSize = 28.sp,
+                                fontSize = 24.sp,
                             )
                         }
                     }
-                    Spacer(Modifier.width(14.dp))
+                    Spacer(Modifier.width(12.dp))
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -320,7 +320,7 @@ private fun ReminderCard(
                     ) {
                         Text(
                             text = reminder.title,
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -328,13 +328,13 @@ private fun ReminderCard(
                         Text(
                             text = reminder.nextTriggerAt?.atZone(ZoneId.systemDefault())?.format(TIME_FORMAT).orEmpty(),
                             color = cardAccent,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
                             text = reminder.scheduleLabel(),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                         )
                     }
                     IconButton(
@@ -352,7 +352,7 @@ private fun ReminderCard(
                     Text(
                         text = description,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -367,7 +367,7 @@ private fun ReminderCard(
                             onClick = onSnooze,
                             modifier = Modifier
                                 .weight(1f)
-                                .height(48.dp),
+                                .height(44.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = categoryAccent.copy(alpha = 0.14f),
                                 contentColor = categoryAccent,
@@ -386,7 +386,7 @@ private fun ReminderCard(
                         )
                         FilledTonalButton(
                             onClick = onSkip,
-                            modifier = Modifier.height(48.dp),
+                            modifier = Modifier.height(44.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -414,7 +414,7 @@ private fun ReminderActionButton(
 ) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.size(48.dp),
+        modifier = Modifier.size(44.dp),
         color = containerColor,
         contentColor = contentColor,
         shape = MaterialTheme.shapes.medium,

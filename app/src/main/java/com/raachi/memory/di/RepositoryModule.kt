@@ -7,6 +7,7 @@ import com.raachi.memory.data.ledger.OfflineLedgerRepository
 import com.raachi.memory.data.ledger.AlarmLedgerAlertScheduler
 import com.raachi.memory.data.settings.ProtoAppSettingsRepository
 import com.raachi.memory.domain.repository.AppSettingsRepository
+import com.raachi.memory.domain.repository.AppLockRepository
 import com.raachi.memory.domain.repository.ProfileRepository
 import com.raachi.memory.domain.repository.ReminderRepository
 import com.raachi.memory.domain.repository.ReminderScheduler
@@ -72,4 +73,10 @@ abstract class RepositoryModule {
     abstract fun bindAppSettingsRepository(
         repository: ProtoAppSettingsRepository,
     ): AppSettingsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAppLockRepository(
+        repository: ProtoAppSettingsRepository,
+    ): AppLockRepository
 }

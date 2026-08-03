@@ -2,7 +2,9 @@ package com.raachi.memory.data.settings
 
 import androidx.datastore.core.DataStore
 import com.raachi.memory.domain.model.AppPreferences
+import com.raachi.memory.domain.model.AppLockSettings
 import com.raachi.memory.domain.model.ThemeMode
+import com.raachi.memory.domain.repository.AppLockRepository
 import com.raachi.memory.domain.repository.AppSettingsRepository
 import java.io.IOException
 import kotlinx.coroutines.flow.Flow
@@ -12,8 +14,8 @@ import javax.inject.Inject
 
 class ProtoAppSettingsRepository @Inject constructor(
     private val dataStore: DataStore<AppSettings>,
-) : AppSettingsRepository {
-    override val preferences: Flow<AppPreferences> = dataStore.data
+) : AppSettingsRepository, AppLockRepository {
+    private val settingsData = dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(AppSettings.getDefaultInstance())
@@ -21,7 +23,10 @@ class ProtoAppSettingsRepository @Inject constructor(
                 throw exception
             }
         }
-        .map(AppSettings::toDomain)
+
+    override val preferences: Flow<AppPreferences> = settingsData.map(AppSettings::toDomain)
+
+    override val appLockSettings: Flow<AppLockSettings> = settingsData.map(AppSettings::toAppLockSettings)
 
     override val onboardingCompleted: Flow<Boolean> = preferences.map { it.onboardingCompleted }
 
@@ -51,14 +56,27 @@ class ProtoAppSettingsRepository @Inject constructor(
     }
 
     override suspend fun replacePreferences(preferences: AppPreferences) {
-        dataStore.updateData {
-            AppSettings.newBuilder()
+        dataStore.updateData { settings ->
+            settings.toBuilder()
                 .setOnboardingCompleted(preferences.onboardingCompleted)
                 .setThemeMode(preferences.themeMode.toProto())
                 .setReminderSound(
                     if (preferences.reminderSoundEnabled) SoundModeProto.SOUND_MODE_ENABLED else SoundModeProto.SOUND_MODE_DISABLED,
                 )
                 .setDefaultSnoozeMinutes(preferences.defaultSnoozeMinutes.takeIf { it in ALLOWED_SNOOZE_MINUTES } ?: 10)
+                .build()
+        }
+    }
+
+    override suspend fun replaceAppLockSettings(settings: AppLockSettings) {
+        dataStore.updateData { current ->
+            current.toBuilder()
+                .setAppLockEnabled(settings.enabled)
+                .setAppLockPasscodeHash(settings.passcodeHash)
+                .setAppLockPasscodeSalt(settings.passcodeSalt)
+                .setAppLockRecoveryHash(settings.recoveryHash)
+                .setAppLockRecoverySalt(settings.recoverySalt)
+                .setAppLockBiometricEnabled(settings.biometricEnabled)
                 .build()
         }
     }
@@ -73,6 +91,15 @@ private fun AppSettings.toDomain(): AppPreferences = AppPreferences(
     },
     reminderSoundEnabled = reminderSound != SoundModeProto.SOUND_MODE_DISABLED,
     defaultSnoozeMinutes = defaultSnoozeMinutes.takeIf { it in ALLOWED_SNOOZE_MINUTES } ?: 10,
+)
+
+private fun AppSettings.toAppLockSettings(): AppLockSettings = AppLockSettings(
+    enabled = appLockEnabled,
+    passcodeHash = appLockPasscodeHash,
+    passcodeSalt = appLockPasscodeSalt,
+    recoveryHash = appLockRecoveryHash,
+    recoverySalt = appLockRecoverySalt,
+    biometricEnabled = appLockBiometricEnabled,
 )
 
 private fun ThemeMode.toProto(): ThemeModeProto = when (this) {

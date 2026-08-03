@@ -19,11 +19,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material3.CircularProgressIndicator
@@ -59,11 +59,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raachi.memory.R
-import com.raachi.memory.core.ui.AppSection
 import com.raachi.memory.core.ui.LedgerMainColor
 import com.raachi.memory.core.ui.LedgerOnMainColor
-import com.raachi.memory.core.ui.RaachiBottomBar
 import com.raachi.memory.core.ui.RaachiWordmark
+import com.raachi.memory.core.ui.DrawerDestination
+import com.raachi.memory.core.ui.RaachiBottomBar
+import com.raachi.memory.core.ui.ProfileAvatar
 import com.raachi.memory.core.designsystem.theme.RaachiBrandNavy
 import com.raachi.memory.core.ui.ledgerKindColor
 import com.raachi.memory.core.ui.ledgerKindSymbol
@@ -71,8 +72,6 @@ import com.raachi.memory.core.ui.raachiSuccessColor
 import com.raachi.memory.core.ui.raachiSuccessContainerColor
 import com.raachi.memory.core.ui.reminderCategoryAccent
 import com.raachi.memory.core.ui.reminderCategoryEmoji
-import com.raachi.memory.core.ui.ExpenseCreditColor
-import com.raachi.memory.core.ui.ExpenseDebitColor
 import com.raachi.memory.core.ui.ExpenseMainColor
 import com.raachi.memory.domain.model.LedgerEntry
 import com.raachi.memory.domain.model.LedgerKind
@@ -88,12 +87,12 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun DashboardScreen(
     onOpenProfile: () -> Unit,
-    onOpenSection: (AppSection) -> Unit,
+    onOpenDrawer: () -> Unit,
+    onOpenPrimary: (DrawerDestination) -> Unit,
     onAddReminder: () -> Unit,
     onAddLedger: () -> Unit,
     onOpenReminder: (Long) -> Unit,
     onOpenLedger: (Long) -> Unit,
-    onOpenExpenses: () -> Unit,
     onAddExpense: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
@@ -128,27 +127,31 @@ fun DashboardScreen(
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     )
                 },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(
+                            imageVector = Icons.Outlined.Menu,
+                            contentDescription = stringResource(R.string.open_navigation_menu),
+                        )
+                    }
+                },
                 actions = {
                     IconButton(onClick = onOpenProfile) {
-                        Icon(
-                            imageVector = Icons.Outlined.AccountCircle,
-                            contentDescription = stringResource(R.string.open_profile),
-                            modifier = Modifier.size(32.dp),
+                        ProfileAvatar(
+                            name = (uiState as? DashboardUiState.Ready)?.name.orEmpty(),
+                            photoUri = (uiState as? DashboardUiState.Ready)?.profilePhotoUri,
+                            size = 36.dp,
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
+                    navigationIconContentColor = MaterialTheme.colorScheme.primary,
                     actionIconContentColor = MaterialTheme.colorScheme.primary,
                 ),
             )
         },
-        bottomBar = {
-            RaachiBottomBar(
-                selected = AppSection.HOME,
-                onSelected = onOpenSection,
-            )
-        },
+        bottomBar = { RaachiBottomBar(DrawerDestination.HOME, onOpenPrimary) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showQuickAdd = true },
@@ -188,11 +191,10 @@ fun DashboardScreen(
                 state = state,
                 onAddReminder = onAddReminder,
                 onAddLedger = onAddLedger,
-                onViewReminders = { onOpenSection(AppSection.REMINDERS) },
-                onViewLedger = { onOpenSection(AppSection.LEDGER) },
+                onViewReminders = { onOpenPrimary(DrawerDestination.REMINDERS) },
+                onViewLedger = { onOpenPrimary(DrawerDestination.LEDGER) },
                 onOpenReminder = onOpenReminder,
                 onOpenLedger = onOpenLedger,
-                onOpenExpenses = onOpenExpenses,
                 modifier = Modifier.padding(innerPadding),
             )
         }
@@ -208,7 +210,6 @@ private fun DashboardContent(
     onViewLedger: () -> Unit,
     onOpenReminder: (Long) -> Unit,
     onOpenLedger: (Long) -> Unit,
-    onOpenExpenses: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -271,14 +272,6 @@ private fun DashboardContent(
                     modifier = Modifier.weight(1f),
                 )
             }
-        }
-        item {
-            ExpenseDashboardCard(
-                balancePaise = state.expenseBalancePaise,
-                todayExpensePaise = state.todayExpensePaise,
-                accountCount = state.expenseAccountCount,
-                onClick = onOpenExpenses,
-            )
         }
         item {
             if (state.upcomingReminders.isEmpty()) {
@@ -675,52 +668,6 @@ private fun QuickAddSheet(
                 icon = { Icon(Icons.Outlined.Payments, contentDescription = null) },
                 text = { Text("Add expense transaction") },
             )
-        }
-    }
-}
-
-@Composable
-private fun ExpenseDashboardCard(
-    balancePaise: Long,
-    todayExpensePaise: Long,
-    accountCount: Int,
-    onClick: () -> Unit,
-) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        color = ExpenseMainColor.copy(alpha = 0.12f),
-        shape = MaterialTheme.shapes.large,
-        border = BorderStroke(1.dp, ExpenseMainColor.copy(alpha = 0.30f)),
-    ) {
-        Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(
-                modifier = Modifier.size(52.dp),
-                color = ExpenseMainColor,
-                contentColor = Color.Black,
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.Payments, contentDescription = null)
-                }
-            }
-            Column(modifier = Modifier.weight(1f).padding(horizontal = 14.dp)) {
-                Text("Daily Expenses", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(
-                    if (accountCount == 0) "Set up bank and cash balances" else "$accountCount accounts · ${formatDashboardCurrency(todayExpensePaise)} spent today",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text("Available", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                Text(
-                    formatDashboardCurrency(balancePaise),
-                    color = if (balancePaise < 0) ExpenseDebitColor else ExpenseCreditColor,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
         }
     }
 }

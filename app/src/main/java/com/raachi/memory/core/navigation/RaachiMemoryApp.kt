@@ -3,22 +3,27 @@ package com.raachi.memory.core.navigation
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.rememberDrawerState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.raachi.memory.foundation.FoundationScreen
-import com.raachi.memory.foundation.SectionShellScreen
 import com.raachi.memory.feature.dashboard.DashboardScreen
 import com.raachi.memory.feature.onboarding.OnboardingProfileScreen
 import com.raachi.memory.feature.onboarding.WelcomeScreen
 import com.raachi.memory.feature.profile.EditProfileScreen
 import com.raachi.memory.feature.profile.ProfileScreen
-import com.raachi.memory.core.ui.AppSection
+import com.raachi.memory.core.ui.DrawerDestination
+import com.raachi.memory.core.ui.RaachiNavigationDrawer
 import com.raachi.memory.feature.reminder.ReminderEditorScreen
 import com.raachi.memory.feature.reminder.ReminderEditorViewModel
 import com.raachi.memory.feature.reminder.ReminderListScreen
@@ -31,13 +36,17 @@ import com.raachi.memory.feature.settings.SettingsScreen
 import com.raachi.memory.feature.expense.ExpenseEditorScreen
 import com.raachi.memory.feature.expense.ExpenseEditorViewModel
 import com.raachi.memory.feature.expense.ExpenseOverviewScreen
+import com.raachi.memory.feature.security.AppLockSettingsScreen
+import kotlinx.coroutines.launch
 
 @Composable
 fun RaachiMemoryApp(
     modifier: Modifier = Modifier,
+    biometricAvailable: Boolean = false,
     viewModel: AppViewModel = hiltViewModel(),
 ) {
     val startState by viewModel.startState.collectAsStateWithLifecycle()
+    val profile by viewModel.profile.collectAsStateWithLifecycle()
 
     if (startState == AppStartState.Loading) {
         FoundationScreen(
@@ -49,11 +58,32 @@ fun RaachiMemoryApp(
     }
 
     val navController = rememberNavController()
-    NavHost(
-        navController = navController,
-        startDestination = if (startState == AppStartState.Ready) HOME_ROUTE else WELCOME_ROUTE,
-        modifier = modifier.fillMaxSize(),
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val selectedDestination = backStackEntry?.destination?.route.toDrawerDestination()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val coroutineScope = rememberCoroutineScope()
+    val openDrawer: () -> Unit = { coroutineScope.launch { drawerState.open() } }
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = selectedDestination != null,
+        drawerContent = {
+            RaachiNavigationDrawer(
+                selected = selectedDestination,
+                profileName = profile?.name.orEmpty(),
+                profilePhotoUri = profile?.profilePhotoUri,
+                onSelected = { destination ->
+                    coroutineScope.launch { drawerState.close() }
+                    navController.navigateToDrawerDestination(destination)
+                },
+            )
+        },
     ) {
+        NavHost(
+            navController = navController,
+            startDestination = if (startState == AppStartState.Ready) HOME_ROUTE else WELCOME_ROUTE,
+            modifier = modifier.fillMaxSize(),
+        ) {
         composable(WELCOME_ROUTE) {
             WelcomeScreen(
                 onContinue = { navController.navigate(ONBOARDING_PROFILE_ROUTE) },
@@ -72,41 +102,40 @@ fun RaachiMemoryApp(
         composable(HOME_ROUTE) {
             DashboardScreen(
                 onOpenProfile = { navController.navigate(PROFILE_ROUTE) },
-                onOpenSection = { section -> navController.navigateToSection(section) },
+                onOpenDrawer = openDrawer,
+                onOpenPrimary = navController::navigateToDrawerDestination,
                 onAddReminder = { navController.navigate(ADD_REMINDER_ROUTE) },
                 onAddLedger = { navController.navigate(ADD_LEDGER_ROUTE) },
                 onOpenReminder = { id -> navController.navigate("reminder_editor/$id") },
                 onOpenLedger = { id -> navController.navigate("ledger_editor/$id") },
-                onOpenExpenses = { navController.navigate(EXPENSES_ROUTE) },
                 onAddExpense = { navController.navigate(ADD_EXPENSE_TRANSACTION_ROUTE) },
             )
         }
         composable(REMINDERS_ROUTE) {
             ReminderListScreen(
-                onBack = navController::popBackStack,
-                onOpenSection = { section -> navController.navigateToSection(section) },
+                onOpenDrawer = openDrawer,
+                onOpenPrimary = navController::navigateToDrawerDestination,
                 onAddReminder = { navController.navigate(ADD_REMINDER_ROUTE) },
                 onEditReminder = { id -> navController.navigate("reminder_editor/$id") },
             )
         }
         composable(LEDGER_ROUTE) {
             LedgerListScreen(
-                onBack = navController::popBackStack,
-                onOpenSection = { section -> navController.navigateToSection(section) },
+                onOpenDrawer = openDrawer,
+                onOpenPrimary = navController::navigateToDrawerDestination,
                 onAddEntry = { navController.navigate(ADD_LEDGER_ROUTE) },
                 onEditEntry = { id -> navController.navigate("ledger_editor/$id") },
             )
         }
         composable(ACTIVITY_ROUTE) {
             ActivityScreen(
-                onBack = navController::popBackStack,
-                onOpenSection = { section -> navController.navigateToSection(section) },
+                onOpenDrawer = openDrawer,
             )
         }
         composable(EXPENSES_ROUTE) {
             ExpenseOverviewScreen(
-                onBack = navController::popBackStack,
-                onOpenSection = { section -> navController.navigateToSection(section) },
+                onOpenDrawer = openDrawer,
+                onOpenPrimary = navController::navigateToDrawerDestination,
                 onAddTransaction = { navController.navigate(ADD_EXPENSE_TRANSACTION_ROUTE) },
                 onEditTransaction = { id -> navController.navigate("expense_editor/$id") },
             )
@@ -130,13 +159,27 @@ fun RaachiMemoryApp(
         }
         composable(SETTINGS_ROUTE) {
             SettingsScreen(
-                onBack = navController::popBackStack,
-                onOpenSection = { section -> navController.navigateToSection(section) },
+                onOpenDrawer = openDrawer,
                 onOpenAbout = { navController.navigate(ABOUT_ROUTE) },
+                onOpenAppLock = { navController.navigate(APP_LOCK_ROUTE) },
+            )
+        }
+        composable(BACKUP_RESTORE_ROUTE) {
+            SettingsScreen(
+                onOpenDrawer = openDrawer,
+                onOpenAbout = { navController.navigate(ABOUT_ROUTE) },
+                onOpenAppLock = { navController.navigate(APP_LOCK_ROUTE) },
+                backupOnly = true,
+            )
+        }
+        composable(APP_LOCK_ROUTE) {
+            AppLockSettingsScreen(
+                onBack = navController::popBackStack,
+                biometricAvailable = biometricAvailable,
             )
         }
         composable(ABOUT_ROUTE) {
-            AboutScreen(onBack = navController::popBackStack)
+            AboutScreen(onOpenDrawer = openDrawer)
         }
         composable(ADD_REMINDER_ROUTE) {
             ReminderEditorScreen(
@@ -174,7 +217,7 @@ fun RaachiMemoryApp(
         }
         composable(PROFILE_ROUTE) {
             ProfileScreen(
-                onBack = navController::popBackStack,
+                onOpenDrawer = openDrawer,
                 onEditProfile = { navController.navigate(EDIT_PROFILE_ROUTE) },
             )
         }
@@ -185,21 +228,38 @@ fun RaachiMemoryApp(
             )
         }
     }
+    }
 }
 
-private fun AppSection.route(): String = when (this) {
-    AppSection.HOME -> HOME_ROUTE
-    AppSection.REMINDERS -> REMINDERS_ROUTE
-    AppSection.LEDGER -> LEDGER_ROUTE
-    AppSection.EXPENSES -> EXPENSES_ROUTE
-    AppSection.ACTIVITY -> ACTIVITY_ROUTE
-    AppSection.SETTINGS -> SETTINGS_ROUTE
+private fun DrawerDestination.route(): String = when (this) {
+    DrawerDestination.HOME -> HOME_ROUTE
+    DrawerDestination.REMINDERS -> REMINDERS_ROUTE
+    DrawerDestination.LEDGER -> LEDGER_ROUTE
+    DrawerDestination.EXPENSES -> EXPENSES_ROUTE
+    DrawerDestination.ACTIVITY -> ACTIVITY_ROUTE
+    DrawerDestination.PROFILE -> PROFILE_ROUTE
+    DrawerDestination.BACKUP_RESTORE -> BACKUP_RESTORE_ROUTE
+    DrawerDestination.SETTINGS -> SETTINGS_ROUTE
+    DrawerDestination.ABOUT -> ABOUT_ROUTE
 }
 
-private fun androidx.navigation.NavHostController.navigateToSection(section: AppSection) {
-    navigate(section.route()) {
-        popUpTo(HOME_ROUTE) { saveState = true }
+private fun String?.toDrawerDestination(): DrawerDestination? = when (this) {
+    HOME_ROUTE -> DrawerDestination.HOME
+    REMINDERS_ROUTE -> DrawerDestination.REMINDERS
+    LEDGER_ROUTE -> DrawerDestination.LEDGER
+    EXPENSES_ROUTE -> DrawerDestination.EXPENSES
+    ACTIVITY_ROUTE -> DrawerDestination.ACTIVITY
+    PROFILE_ROUTE -> DrawerDestination.PROFILE
+    BACKUP_RESTORE_ROUTE -> DrawerDestination.BACKUP_RESTORE
+    SETTINGS_ROUTE -> DrawerDestination.SETTINGS
+    ABOUT_ROUTE -> DrawerDestination.ABOUT
+    else -> null
+}
+
+private fun androidx.navigation.NavHostController.navigateToDrawerDestination(destination: DrawerDestination) {
+    if (currentDestination?.route == destination.route()) return
+    navigate(destination.route()) {
+        popUpTo(HOME_ROUTE) { inclusive = false }
         launchSingleTop = true
-        restoreState = true
     }
 }

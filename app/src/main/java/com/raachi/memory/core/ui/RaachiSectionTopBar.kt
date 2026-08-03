@@ -2,7 +2,7 @@ package com.raachi.memory.core.ui
 
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -21,7 +21,7 @@ import com.raachi.memory.R
 @Composable
 fun RaachiSectionTopBar(
     title: String,
-    onBack: () -> Unit,
+    onOpenDrawer: () -> Unit,
     accentColor: Color? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -37,10 +37,10 @@ fun RaachiSectionTopBar(
             )
         },
         navigationIcon = {
-            IconButton(onClick = onBack) {
+            IconButton(onClick = onOpenDrawer) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                    contentDescription = stringResource(R.string.back),
+                    imageVector = Icons.Outlined.Menu,
+                    contentDescription = stringResource(R.string.open_navigation_menu),
                 )
             }
         },

@@ -110,12 +110,14 @@ class ProfileUseCasesTest {
             ProfileInput(
                 name = " Mannu ",
                 email = " mannu@gmail.com ",
+                profilePhotoUri = "file:///profile-photo.jpg",
             ),
         )
 
         assertTrue(result is SaveProfileResult.Success)
         assertEquals("Mannu", profiles.profile.value?.name)
         assertEquals("mannu@gmail.com", profiles.profile.value?.email)
+        assertEquals("file:///profile-photo.jpg", profiles.profile.value?.profilePhotoUri)
         assertTrue(settings.preferencesState.value.onboardingCompleted)
     }
 

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Snooze
@@ -56,8 +57,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raachi.memory.R
-import com.raachi.memory.core.ui.AppSection
-import com.raachi.memory.core.ui.RaachiBottomBar
 import com.raachi.memory.core.ui.RaachiSectionTopBar
 import com.raachi.memory.domain.model.ThemeMode
 import java.time.LocalDateTime
@@ -66,10 +65,11 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onBack: () -> Unit,
-    onOpenSection: (AppSection) -> Unit,
+    onOpenDrawer: () -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenAppLock: () -> Unit,
     modifier: Modifier = Modifier,
+    backupOnly: Boolean = false,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -110,11 +110,10 @@ fun SettingsScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             RaachiSectionTopBar(
-                title = stringResource(R.string.nav_settings),
-                onBack = onBack,
+                title = stringResource(if (backupOnly) R.string.nav_backup_restore else R.string.nav_settings),
+                onOpenDrawer = onOpenDrawer,
             )
         },
-        bottomBar = { RaachiBottomBar(AppSection.SETTINGS, onOpenSection) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         Column(
@@ -125,44 +124,55 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                SettingsSectionTitle(stringResource(R.string.appearance))
-                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.large) {
-                    Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        PreferenceHeading(Icons.Outlined.DarkMode, stringResource(R.string.theme), stringResource(R.string.theme_support))
-                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                            ThemeMode.entries.forEachIndexed { index, mode ->
-                                SegmentedButton(
-                                    selected = state.preferences.themeMode == mode,
-                                    onClick = { viewModel.setThemeMode(mode) },
-                                    shape = SegmentedButtonDefaults.itemShape(index, ThemeMode.entries.size),
-                                ) { Text(stringResource(mode.labelRes())) }
+                if (!backupOnly) {
+                    SettingsSectionTitle(stringResource(R.string.appearance))
+                    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.large) {
+                        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                            PreferenceHeading(Icons.Outlined.DarkMode, stringResource(R.string.theme), stringResource(R.string.theme_support))
+                            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                                ThemeMode.entries.forEachIndexed { index, mode ->
+                                    SegmentedButton(
+                                        selected = state.preferences.themeMode == mode,
+                                        onClick = { viewModel.setThemeMode(mode) },
+                                        shape = SegmentedButtonDefaults.itemShape(index, ThemeMode.entries.size),
+                                    ) { Text(stringResource(mode.labelRes())) }
+                                }
                             }
                         }
                     }
-                }
 
-                SettingsSectionTitle(stringResource(R.string.reminder_preferences))
-                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.large) {
-                    Column {
-                        PreferenceRow(
-                            icon = Icons.Outlined.Notifications,
-                            title = stringResource(R.string.reminder_sound_setting),
-                            support = stringResource(R.string.reminder_sound_setting_support),
-                            trailing = {
-                                Switch(
-                                    checked = state.preferences.reminderSoundEnabled,
-                                    onCheckedChange = viewModel::setReminderSound,
-                                )
-                            },
-                        )
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
-                        SnoozePreferenceRow(state.preferences.defaultSnoozeMinutes, viewModel::setDefaultSnooze)
+                    SettingsSectionTitle(stringResource(R.string.reminder_preferences))
+                    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.large) {
+                        Column {
+                            PreferenceRow(
+                                icon = Icons.Outlined.Notifications,
+                                title = stringResource(R.string.reminder_sound_setting),
+                                support = stringResource(R.string.reminder_sound_setting_support),
+                                trailing = {
+                                    Switch(
+                                        checked = state.preferences.reminderSoundEnabled,
+                                        onCheckedChange = viewModel::setReminderSound,
+                                    )
+                                },
+                            )
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                            SnoozePreferenceRow(state.preferences.defaultSnoozeMinutes, viewModel::setDefaultSnooze)
+                        }
                     }
                 }
 
                 SettingsSectionTitle(stringResource(R.string.data_and_privacy))
                 Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.large) {
                     Column {
+                        if (!backupOnly) {
+                            PreferenceRow(
+                                icon = Icons.Outlined.Lock,
+                                title = stringResource(R.string.app_lock),
+                                support = stringResource(R.string.app_lock_support),
+                                onClick = onOpenAppLock,
+                            )
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                        }
                         PreferenceRow(
                             icon = Icons.Outlined.Backup,
                             title = stringResource(R.string.export_backup),
@@ -181,14 +191,16 @@ fun SettingsScreen(
                     }
                 }
 
-                SettingsSectionTitle(stringResource(R.string.support_and_about))
-                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.large) {
-                    PreferenceRow(
-                        icon = Icons.Outlined.Info,
-                        title = stringResource(R.string.about_raachi_memory),
-                        support = stringResource(R.string.about_support),
-                        onClick = onOpenAbout,
-                    )
+                if (!backupOnly) {
+                    SettingsSectionTitle(stringResource(R.string.support_and_about))
+                    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.large) {
+                        PreferenceRow(
+                            icon = Icons.Outlined.Info,
+                            title = stringResource(R.string.about_raachi_memory),
+                            support = stringResource(R.string.about_support),
+                            onClick = onOpenAbout,
+                        )
+                    }
                 }
                 Spacer(Modifier.size(8.dp))
             }

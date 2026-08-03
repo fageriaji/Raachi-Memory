@@ -1,7 +1,9 @@
 package com.raachi.memory.feature.profile
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.raachi.memory.data.profile.ProfilePhotoStore
 import com.raachi.memory.domain.model.Gender
 import com.raachi.memory.domain.model.ProfileField
 import com.raachi.memory.domain.model.ProfileInput
@@ -32,13 +34,16 @@ data class EditProfileUiState(
 class EditProfileViewModel @Inject constructor(
     observeProfile: ObserveProfileUseCase,
     private val saveProfile: SaveProfileUseCase,
+    private val photoStore: ProfilePhotoStore,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState: StateFlow<EditProfileUiState> = _uiState.asStateFlow()
+    private var initialPhotoUri: String? = null
 
     init {
         viewModelScope.launch {
             val profile = observeProfile().first()
+            initialPhotoUri = profile?.profilePhotoUri
             _uiState.update {
                 it.copy(
                     input = profile?.let { savedProfile ->
@@ -50,6 +55,7 @@ class EditProfileViewModel @Inject constructor(
                             email = savedProfile.email.orEmpty(),
                             heightCm = savedProfile.heightCm?.toDisplayValue().orEmpty(),
                             weightKg = savedProfile.weightKg?.toDisplayValue().orEmpty(),
+                            profilePhotoUri = savedProfile.profilePhotoUri,
                         )
                     } ?: ProfileInput(),
                     isLoading = false,
@@ -75,27 +81,48 @@ class EditProfileViewModel @Inject constructor(
 
     fun updateWeight(value: String) = updateInput(ProfileField.WEIGHT) { copy(weightKg = value) }
 
+    fun updateProfilePhoto(uri: String?) = updateInput { copy(profilePhotoUri = uri) }
+
     fun save() {
         if (_uiState.value.isSaving || _uiState.value.isLoading) return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, saveFailed = false) }
-            runCatching { saveProfile(_uiState.value.input) }
-                .onSuccess { result ->
-                    when (result) {
-                        is SaveProfileResult.Invalid -> _uiState.update {
+            var persistedPhotoUri: String? = null
+            try {
+                val draftInput = _uiState.value.input
+                val finalPhotoUri = when {
+                    draftInput.profilePhotoUri == null -> null
+                    draftInput.profilePhotoUri == initialPhotoUri -> initialPhotoUri
+                    else -> photoStore.persist(Uri.parse(draftInput.profilePhotoUri)).also {
+                        persistedPhotoUri = it
+                    }
+                }
+                when (val result = saveProfile(draftInput.copy(profilePhotoUri = finalPhotoUri))) {
+                    is SaveProfileResult.Invalid -> {
+                        photoStore.delete(persistedPhotoUri)
+                        _uiState.update {
                             it.copy(
                                 errors = result.validation.errors,
                                 isSaving = false,
                             )
                         }
-                        is SaveProfileResult.Success -> _uiState.update {
-                            it.copy(isSaving = false, isSaved = true)
+                    }
+                    is SaveProfileResult.Success -> {
+                        if (initialPhotoUri != finalPhotoUri) photoStore.delete(initialPhotoUri)
+                        initialPhotoUri = finalPhotoUri
+                        _uiState.update {
+                            it.copy(
+                                input = it.input.copy(profilePhotoUri = finalPhotoUri),
+                                isSaving = false,
+                                isSaved = true,
+                            )
                         }
                     }
                 }
-                .onFailure {
-                    _uiState.update { it.copy(isSaving = false, saveFailed = true) }
-                }
+            } catch (_: Throwable) {
+                photoStore.delete(persistedPhotoUri)
+                _uiState.update { it.copy(isSaving = false, saveFailed = true) }
+            }
         }
     }
 

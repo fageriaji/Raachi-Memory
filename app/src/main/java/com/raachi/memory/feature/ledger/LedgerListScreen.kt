@@ -52,18 +52,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.net.toUri
 import com.raachi.memory.R
-import com.raachi.memory.core.ui.AppSection
 import com.raachi.memory.core.ui.LedgerItemColor
 import com.raachi.memory.core.ui.LedgerMainColor
 import com.raachi.memory.core.ui.LedgerMoneyColor
-import com.raachi.memory.core.ui.RaachiBottomBar
 import com.raachi.memory.core.ui.RaachiSectionTopBar
+import com.raachi.memory.core.ui.DrawerDestination
+import com.raachi.memory.core.ui.RaachiBottomBar
 import com.raachi.memory.core.ui.NotificationPermissionControls
 import com.raachi.memory.core.ui.ledgerKindColor
 import com.raachi.memory.core.ui.raachiSuccessColor
@@ -80,8 +81,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LedgerListScreen(
-    onBack: () -> Unit,
-    onOpenSection: (AppSection) -> Unit,
+    onOpenDrawer: () -> Unit,
+    onOpenPrimary: (DrawerDestination) -> Unit,
     onAddEntry: () -> Unit,
     onEditEntry: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -111,7 +112,7 @@ fun LedgerListScreen(
         topBar = {
             RaachiSectionTopBar(
                 title = stringResource(R.string.nav_ledger),
-                onBack = onBack,
+                onOpenDrawer = onOpenDrawer,
                 accentColor = LedgerMainColor,
                 actions = {
                     IconButton(onClick = { searching = !searching }) {
@@ -120,7 +121,7 @@ fun LedgerListScreen(
                 },
             )
         },
-        bottomBar = { RaachiBottomBar(AppSection.LEDGER, onOpenSection) },
+        bottomBar = { RaachiBottomBar(DrawerDestination.LEDGER, onOpenPrimary) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddEntry,
@@ -200,20 +201,20 @@ private fun LedgerSummaryCard(
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier, color = MaterialTheme.colorScheme.surface, shape = MaterialTheme.shapes.large, tonalElevation = 1.dp) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Surface(
                 color = LedgerMainColor.copy(alpha = 0.10f),
                 contentColor = LedgerMainColor,
                 shape = MaterialTheme.shapes.medium,
             ) {
-                Box(modifier = Modifier.padding(10.dp), contentAlignment = Alignment.Center) { icon() }
+                Box(modifier = Modifier.padding(8.dp), contentAlignment = Alignment.Center) { icon() }
             }
-            Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-            Text(formatCurrency(amount), color = LedgerMoneyColor, style = MaterialTheme.typography.titleLarge, maxLines = 1)
+            Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Text(formatCurrency(amount), color = LedgerMoneyColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
             Text(
                 pluralStringResource(R.plurals.ledger_item_count, items, items),
                 color = LedgerItemColor,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
             )
         }
     }
@@ -266,25 +267,25 @@ private fun LedgerCard(
         shape = MaterialTheme.shapes.large,
         tonalElevation = 1.dp,
     ) {
-        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 Surface(color = kindColor.copy(alpha = 0.12f), shape = MaterialTheme.shapes.medium) {
                     Text(
                         text = entry.personName.initials(),
-                        modifier = Modifier.padding(horizontal = 13.dp, vertical = 11.dp),
+                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 9.dp),
                         color = kindColor,
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }
                 Column(modifier = Modifier.weight(1f).padding(start = 14.dp)) {
-                    Text(entry.personName, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(entry.personName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
                         text = stringResource(
                             if (entry.direction == LedgerDirection.LENT) R.string.lent_on_date else R.string.borrowed_on_date,
                             entry.transactionDate.format(DATE_FORMAT),
                         ),
                         color = LedgerMainColor,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
                         text = entry.dueLabel(today),
@@ -293,7 +294,7 @@ private fun LedgerCard(
                             entry.isOverdue(today) -> MaterialTheme.colorScheme.error
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         },
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
@@ -303,11 +304,12 @@ private fun LedgerCard(
                     Text(
                         text = entry.amountPaise?.let(::formatCurrency) ?: entry.itemName.orEmpty(),
                         color = kindColor,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Text(stringResource(if (entry.direction == LedgerDirection.LENT) R.string.lent else R.string.borrowed), style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(if (entry.direction == LedgerDirection.LENT) R.string.lent else R.string.borrowed), style = MaterialTheme.typography.bodySmall)
                 }
             }
             if (!entry.isReturned) {
