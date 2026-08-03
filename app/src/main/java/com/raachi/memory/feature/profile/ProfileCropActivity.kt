@@ -48,13 +48,17 @@ import com.raachi.memory.R
 import com.raachi.memory.ThemeViewModel
 import com.raachi.memory.core.designsystem.theme.RaachiMemoryTheme
 import com.raachi.memory.domain.model.ThemeMode
+import com.raachi.memory.domain.security.AppLockManager
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
 import java.util.UUID
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class ProfileCropActivity : ComponentActivity() {
     private val themeViewModel: ThemeViewModel by viewModels()
+    @Inject lateinit var appLockManager: AppLockManager
+    private var lockedWhileStopped = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,6 +96,22 @@ class ProfileCropActivity : ComponentActivity() {
                     },
                 )
             }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations && !isFinishing) {
+            lockedWhileStopped = true
+            appLockManager.lockSession()
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (lockedWhileStopped) {
+            lockedWhileStopped = false
+            finish()
         }
     }
 

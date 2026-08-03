@@ -20,7 +20,9 @@ import com.raachi.memory.R
 import com.raachi.memory.domain.model.LedgerEntry
 import com.raachi.memory.domain.usecase.ledgerShareMessage
 
-private const val LEDGER_CHANNEL_ID = "ledger_alerts_raachi_sound"
+private const val LEDGER_CHANNEL_ID = "ledger_alerts_raachi_sound_v3"
+private const val PREVIOUS_LEDGER_CHANNEL_ID = "ledger_alerts_raachi_sound_v2"
+private const val FIRST_CUSTOM_LEDGER_CHANNEL_ID = "ledger_alerts_raachi_sound"
 private const val LEGACY_LEDGER_CHANNEL_ID = "ledger_alerts"
 
 fun createLedgerNotificationChannel(context: Context) {
@@ -35,6 +37,8 @@ fun createLedgerNotificationChannel(context: Context) {
     }
     context.getSystemService(NotificationManager::class.java).apply {
         createNotificationChannel(channel)
+        deleteNotificationChannel(PREVIOUS_LEDGER_CHANNEL_ID)
+        deleteNotificationChannel(FIRST_CUSTOM_LEDGER_CHANNEL_ID)
         deleteNotificationChannel(LEGACY_LEDGER_CHANNEL_ID)
     }
 }
@@ -87,9 +91,12 @@ fun showLedgerNotification(context: Context, entry: LedgerEntry) {
 
 internal fun ledgerNotificationId(entryId: Long): Int = ledgerRequestCode(entryId) xor 0x4E4F5449
 
-private fun raachiSoundUri(context: Context): Uri = Uri.parse(
-    "${ContentResolver.SCHEME_ANDROID_RESOURCE}://${context.packageName}/${R.raw.raachisound}",
-)
+private fun raachiSoundUri(context: Context): Uri = Uri.Builder()
+    .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
+    .authority(context.packageName)
+    .appendPath("raw")
+    .appendPath("raachisound")
+    .build()
 
 private fun notificationAudioAttributes(): AudioAttributes = AudioAttributes.Builder()
     .setUsage(AudioAttributes.USAGE_NOTIFICATION)

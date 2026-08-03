@@ -41,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.raachi.memory.MainActivity
 import com.raachi.memory.R
 import com.raachi.memory.core.ui.ProfileForm
 import com.raachi.memory.core.ui.ProfileAvatar
@@ -56,8 +57,10 @@ fun EditProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val mainActivity = context as? MainActivity
     var photoError by remember { mutableStateOf(false) }
     val cropLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        mainActivity?.endTrustedMediaFlow()
         if (result.resultCode == Activity.RESULT_OK) {
             result.data?.data?.let { cropped ->
                 photoError = false
@@ -68,10 +71,17 @@ fun EditProfileScreen(
         }
     }
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        uri?.let { selected ->
-            cropLauncher.launch(
-                Intent(context, ProfileCropActivity::class.java).setData(selected),
-            )
+        if (uri == null) {
+            mainActivity?.endTrustedMediaFlow()
+        } else {
+            runCatching {
+                cropLauncher.launch(
+                    Intent(context, ProfileCropActivity::class.java).setData(uri),
+                )
+            }.onFailure {
+                mainActivity?.endTrustedMediaFlow()
+                photoError = true
+            }
         }
     }
 
@@ -122,9 +132,15 @@ fun EditProfileScreen(
                     photoUri = uiState.input.profilePhotoUri,
                     hasError = photoError,
                     onChoosePhoto = {
-                        photoPicker.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                        )
+                        mainActivity?.beginTrustedMediaFlow()
+                        runCatching {
+                            photoPicker.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                            )
+                        }.onFailure {
+                            mainActivity?.endTrustedMediaFlow()
+                            photoError = true
+                        }
                     },
                     onRemovePhoto = {
                         photoError = false

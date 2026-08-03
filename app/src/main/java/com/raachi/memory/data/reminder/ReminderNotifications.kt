@@ -18,7 +18,9 @@ import com.raachi.memory.MainActivity
 import com.raachi.memory.R
 import com.raachi.memory.domain.model.Reminder
 
-private const val REMINDER_CHANNEL_ID = "reminders_raachi_sound"
+private const val REMINDER_CHANNEL_ID = "reminders_raachi_sound_v3"
+private const val PREVIOUS_REMINDER_CHANNEL_ID = "reminders_raachi_sound_v2"
+private const val FIRST_CUSTOM_REMINDER_CHANNEL_ID = "reminders_raachi_sound"
 private const val LEGACY_REMINDER_CHANNEL_ID = "reminders"
 private const val SILENT_REMINDER_CHANNEL_ID = "reminders_silent"
 
@@ -44,6 +46,8 @@ fun createReminderNotificationChannel(context: Context) {
         enableVibration(false)
     }
     notificationManager.createNotificationChannel(silentChannel)
+    notificationManager.deleteNotificationChannel(PREVIOUS_REMINDER_CHANNEL_ID)
+    notificationManager.deleteNotificationChannel(FIRST_CUSTOM_REMINDER_CHANNEL_ID)
     notificationManager.deleteNotificationChannel(LEGACY_REMINDER_CHANNEL_ID)
 }
 
@@ -78,9 +82,12 @@ fun showReminderNotification(context: Context, reminder: Reminder, soundEnabled:
     NotificationManagerCompat.from(context).notify(reminder.id.requestCode(), notification)
 }
 
-private fun raachiSoundUri(context: Context): Uri = Uri.parse(
-    "${ContentResolver.SCHEME_ANDROID_RESOURCE}://${context.packageName}/${R.raw.raachisound}",
-)
+private fun raachiSoundUri(context: Context): Uri = Uri.Builder()
+    .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
+    .authority(context.packageName)
+    .appendPath("raw")
+    .appendPath("raachisound")
+    .build()
 
 private fun notificationAudioAttributes(): AudioAttributes = AudioAttributes.Builder()
     .setUsage(AudioAttributes.USAGE_NOTIFICATION)

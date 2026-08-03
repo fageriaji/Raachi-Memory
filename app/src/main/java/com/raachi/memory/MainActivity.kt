@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -31,6 +32,7 @@ class MainActivity : FragmentActivity() {
     private val themeViewModel: ThemeViewModel by viewModels()
     private val appLockViewModel: AppLockViewModel by viewModels()
     private var authenticationResult: ((Boolean) -> Unit)? = null
+    private var trustedMediaFlowStartedAt: Long? = null
     private lateinit var biometricPrompt: BiometricPrompt
     private val deviceCredentialLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
@@ -85,7 +87,22 @@ class MainActivity : FragmentActivity() {
 
     override fun onStop() {
         super.onStop()
-        if (!isChangingConfigurations) appLockViewModel.lock()
+        if (!isChangingConfigurations && !isTrustedMediaFlowActive()) appLockViewModel.lock()
+    }
+
+    fun beginTrustedMediaFlow() {
+        trustedMediaFlowStartedAt = SystemClock.elapsedRealtime()
+    }
+
+    fun endTrustedMediaFlow() {
+        trustedMediaFlowStartedAt = null
+    }
+
+    private fun isTrustedMediaFlowActive(): Boolean {
+        val startedAt = trustedMediaFlowStartedAt ?: return false
+        val active = SystemClock.elapsedRealtime() - startedAt <= TRUSTED_MEDIA_FLOW_TIMEOUT_MS
+        if (!active) trustedMediaFlowStartedAt = null
+        return active
     }
 
     private fun authenticateBiometric(onResult: (Boolean) -> Unit) {
@@ -146,5 +163,9 @@ class MainActivity : FragmentActivity() {
         val callback = this ?: return
         authenticationResult = null
         callback(result)
+    }
+
+    private companion object {
+        const val TRUSTED_MEDIA_FLOW_TIMEOUT_MS = 2 * 60 * 1_000L
     }
 }
