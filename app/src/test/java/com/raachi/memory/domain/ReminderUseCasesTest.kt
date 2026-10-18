@@ -1,6 +1,7 @@
 package com.raachi.memory.domain
 
 import com.raachi.memory.domain.model.Reminder
+import com.raachi.memory.domain.model.AppPreferences
 import com.raachi.memory.domain.model.ReminderCategory
 import com.raachi.memory.domain.model.ReminderInput
 import com.raachi.memory.domain.model.ReminderRepeatType
@@ -82,6 +83,137 @@ class ReminderUseCasesTest {
     }
 
     @Test
+    fun intervalReminder_skipsDefaultQuietHoursAndPreservesCadence() {
+        val trigger = calculateFirstTrigger(
+            ReminderInput(
+                title = "Water",
+                repeatType = ReminderRepeatType.INTERVAL,
+                intervalHours = 2,
+                startDate = LocalDate.of(2026, 7, 29),
+                startTime = LocalTime.of(23, 0),
+            ),
+            clock,
+        )
+
+        assertEquals(Instant.parse("2026-07-30T07:00:00Z"), trigger)
+    }
+
+    @Test
+    fun intervalReminder_canExplicitlyAlertDuringQuietHours() {
+        val trigger = calculateFirstTrigger(
+            ReminderInput(
+                title = "Critical medicine",
+                repeatType = ReminderRepeatType.INTERVAL,
+                intervalHours = 2,
+                startDate = LocalDate.of(2026, 7, 29),
+                startTime = LocalTime.of(23, 0),
+                allowDuringQuietHours = true,
+            ),
+            clock,
+        )
+
+        assertEquals(Instant.parse("2026-07-29T23:00:00Z"), trigger)
+    }
+
+    @Test
+    fun dailyReminder_isNotChangedByQuietHours() {
+        val trigger = calculateFirstTrigger(
+            ReminderInput(
+                title = "Daily medicine",
+                repeatType = ReminderRepeatType.DAILY,
+                startDate = LocalDate.of(2026, 7, 29),
+                startTime = LocalTime.of(23, 0),
+            ),
+            clock,
+        )
+
+        assertEquals(Instant.parse("2026-07-29T23:00:00Z"), trigger)
+    }
+
+    @Test
+    fun intervalReminder_usesUserConfiguredQuietHours() {
+        val trigger = calculateFirstTrigger(
+            ReminderInput(
+                title = "Water",
+                repeatType = ReminderRepeatType.INTERVAL,
+                intervalHours = 2,
+                startDate = LocalDate.of(2026, 7, 29),
+                startTime = LocalTime.of(23, 0),
+            ),
+            clock,
+            AppPreferences(quietHoursStartMinutes = 22 * 60, quietHoursEndMinutes = 8 * 60),
+        )
+
+        assertEquals(Instant.parse("2026-07-30T09:00:00Z"), trigger)
+    }
+
+    @Test
+    fun intervalReminder_supportsDaytimeQuietHours() {
+        val trigger = calculateFirstTrigger(
+            ReminderInput(
+                title = "Focus break",
+                repeatType = ReminderRepeatType.INTERVAL,
+                intervalHours = 1,
+                startDate = LocalDate.of(2026, 7, 29),
+                startTime = LocalTime.of(13, 0),
+            ),
+            clock,
+            AppPreferences(quietHoursStartMinutes = 12 * 60, quietHoursEndMinutes = 15 * 60),
+        )
+
+        assertEquals(Instant.parse("2026-07-29T15:00:00Z"), trigger)
+    }
+
+    @Test
+    fun quietHoursEnd_isAnAllowedTriggerBoundary() {
+        val trigger = calculateFirstTrigger(
+            ReminderInput(
+                title = "Water",
+                repeatType = ReminderRepeatType.INTERVAL,
+                intervalHours = 2,
+                startDate = LocalDate.of(2026, 7, 30),
+                startTime = LocalTime.of(6, 0),
+            ),
+            clock,
+        )
+
+        assertEquals(Instant.parse("2026-07-30T06:00:00Z"), trigger)
+    }
+
+    @Test
+    fun twentyFourHourInterval_resumesAtQuietHoursEndWhenCadenceCannotEscape() {
+        val trigger = calculateFirstTrigger(
+            ReminderInput(
+                title = "Daily interval",
+                repeatType = ReminderRepeatType.INTERVAL,
+                intervalHours = 24,
+                startDate = LocalDate.of(2026, 7, 30),
+                startTime = LocalTime.MIDNIGHT,
+            ),
+            clock,
+        )
+
+        assertEquals(Instant.parse("2026-07-30T06:00:00Z"), trigger)
+    }
+
+    @Test
+    fun disabledQuietHours_keepTheSelectedIntervalTime() {
+        val trigger = calculateFirstTrigger(
+            ReminderInput(
+                title = "Water",
+                repeatType = ReminderRepeatType.INTERVAL,
+                intervalHours = 2,
+                startDate = LocalDate.of(2026, 7, 29),
+                startTime = LocalTime.of(23, 0),
+            ),
+            clock,
+            AppPreferences(quietHoursEnabled = false),
+        )
+
+        assertEquals(Instant.parse("2026-07-29T23:00:00Z"), trigger)
+    }
+
+    @Test
     fun everyRepeatType_rejectsSelectedPastDateAndTime() {
         ReminderRepeatType.entries.forEach { repeatType ->
             val validation = validateReminder(
@@ -117,6 +249,27 @@ class ReminderUseCasesTest {
         assertEquals(
             Instant.parse("2026-07-30T08:00:00Z"),
             calculateFollowingTrigger(reminder, clock.instant(), ZoneOffset.UTC),
+        )
+    }
+
+    @Test
+    fun followingIntervalTrigger_skipsQuietOccurrencesWithoutLoggingSkips() {
+        val reminder = Reminder(
+            id = 10,
+            title = "Water",
+            category = ReminderCategory.WATER,
+            repeatType = ReminderRepeatType.INTERVAL,
+            intervalHours = 2,
+            scheduledAt = Instant.parse("2026-07-29T09:00:00Z"),
+            nextTriggerAt = Instant.parse("2026-07-29T21:00:00Z"),
+            status = ReminderStatus.ACTIVE,
+            createdAt = Instant.parse("2026-07-01T00:00:00Z"),
+            updatedAt = Instant.parse("2026-07-01T00:00:00Z"),
+        )
+
+        assertEquals(
+            Instant.parse("2026-07-30T07:00:00Z"),
+            calculateFollowingTrigger(reminder, Instant.parse("2026-07-29T21:01:00Z"), ZoneOffset.UTC),
         )
     }
 

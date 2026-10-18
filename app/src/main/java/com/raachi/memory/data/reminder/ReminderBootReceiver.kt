@@ -3,10 +3,9 @@ package com.raachi.memory.data.reminder
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.raachi.memory.domain.repository.ReminderRepository
-import com.raachi.memory.domain.repository.ReminderScheduler
 import com.raachi.memory.domain.repository.LedgerRepository
 import com.raachi.memory.domain.repository.LedgerAlertScheduler
+import com.raachi.memory.domain.usecase.ReconcileReminderSchedulesUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -15,8 +14,7 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class ReminderBootReceiver : BroadcastReceiver() {
-    @Inject lateinit var repository: ReminderRepository
-    @Inject lateinit var scheduler: ReminderScheduler
+    @Inject lateinit var reconcileReminderSchedules: ReconcileReminderSchedulesUseCase
     @Inject lateinit var ledgerRepository: LedgerRepository
     @Inject lateinit var ledgerScheduler: LedgerAlertScheduler
 
@@ -25,7 +23,7 @@ class ReminderBootReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                repository.getScheduled().forEach(scheduler::schedule)
+                reconcileReminderSchedules()
                 ledgerRepository.getPendingDue().forEach(ledgerScheduler::schedule)
             } finally {
                 pendingResult.finish()

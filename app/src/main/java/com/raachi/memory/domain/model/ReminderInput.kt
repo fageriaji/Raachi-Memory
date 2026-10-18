@@ -14,6 +14,7 @@ data class ReminderInput(
     val startTime: LocalTime = LocalTime.of(8, 0),
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
+    val allowDuringQuietHours: Boolean = false,
 )
 
 data class ReminderValidation(

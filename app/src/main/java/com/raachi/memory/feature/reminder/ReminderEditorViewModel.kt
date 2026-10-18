@@ -62,6 +62,7 @@ class ReminderEditorViewModel @Inject constructor(
                                 startTime = scheduled.toLocalTime().withSecond(0).withNano(0),
                                 soundEnabled = it.soundEnabled,
                                 vibrationEnabled = it.vibrationEnabled,
+                                allowDuringQuietHours = it.allowDuringQuietHours,
                             )
                         } ?: state.input,
                         isLoading = false,

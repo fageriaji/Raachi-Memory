@@ -1,6 +1,8 @@
 package com.raachi.memory.feature.settings
 
+import android.app.TimePickerDialog
 import android.net.Uri
+import android.text.format.DateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -19,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
@@ -33,6 +36,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -52,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -60,6 +65,7 @@ import com.raachi.memory.R
 import com.raachi.memory.core.ui.RaachiSectionTopBar
 import com.raachi.memory.domain.model.ThemeMode
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -157,6 +163,26 @@ fun SettingsScreen(
                             )
                             HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
                             SnoozePreferenceRow(state.preferences.defaultSnoozeMinutes, viewModel::setDefaultSnooze)
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                            PreferenceRow(
+                                icon = Icons.Outlined.Bedtime,
+                                title = stringResource(R.string.quiet_hours),
+                                support = stringResource(R.string.quiet_hours_support),
+                                trailing = {
+                                    Switch(
+                                        checked = state.preferences.quietHoursEnabled,
+                                        onCheckedChange = viewModel::setQuietHoursEnabled,
+                                    )
+                                },
+                            )
+                            if (state.preferences.quietHoursEnabled) {
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                                QuietHoursTimeRow(
+                                    startMinutes = state.preferences.quietHoursStartMinutes,
+                                    endMinutes = state.preferences.quietHoursEndMinutes,
+                                    onChanged = viewModel::setQuietHours,
+                                )
+                            }
                         }
                     }
                 }
@@ -207,6 +233,85 @@ fun SettingsScreen(
         }
     }
 }
+
+@Composable
+private fun QuietHoursTimeRow(
+    startMinutes: Int,
+    endMinutes: Int,
+    onChanged: (Int, Int) -> Unit,
+) {
+    val context = LocalContext.current
+    val use24HourTime = DateFormat.is24HourFormat(context)
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(stringResource(R.string.quiet_hours_schedule), style = MaterialTheme.typography.titleMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            QuietHoursTimeButton(
+                label = stringResource(R.string.quiet_hours_start),
+                minutes = startMinutes,
+                use24HourTime = use24HourTime,
+                onClick = {
+                    showTimePicker(context, startMinutes, use24HourTime) { selected ->
+                        onChanged(selected, endMinutes)
+                    }
+                },
+                modifier = Modifier.weight(1f),
+            )
+            QuietHoursTimeButton(
+                label = stringResource(R.string.quiet_hours_end),
+                minutes = endMinutes,
+                use24HourTime = use24HourTime,
+                onClick = {
+                    showTimePicker(context, endMinutes, use24HourTime) { selected ->
+                        onChanged(startMinutes, selected)
+                    }
+                },
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Text(
+            stringResource(R.string.quiet_hours_schedule_support),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+}
+
+@Composable
+private fun QuietHoursTimeButton(
+    label: String,
+    minutes: Int,
+    use24HourTime: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+            Text(formatTime(minutes, use24HourTime))
+        }
+    }
+}
+
+private fun showTimePicker(
+    context: android.content.Context,
+    initialMinutes: Int,
+    use24HourTime: Boolean,
+    onSelected: (Int) -> Unit,
+) {
+    TimePickerDialog(
+        context,
+        { _, hour, minute -> onSelected(hour * 60 + minute) },
+        initialMinutes / 60,
+        initialMinutes % 60,
+        use24HourTime,
+    ).show()
+}
+
+private fun formatTime(minutes: Int, use24HourTime: Boolean): String = LocalTime.of(minutes / 60, minutes % 60)
+    .format(DateTimeFormatter.ofPattern(if (use24HourTime) "HH:mm" else "h:mm a"))
 
 @Composable
 private fun SnoozePreferenceRow(minutes: Int, onSelected: (Int) -> Unit) {
@@ -299,6 +404,7 @@ private fun SettingsMessage.stringRes(): Int = when (this) {
     SettingsMessage.EXPORT_COMPLETE -> R.string.export_complete
     SettingsMessage.IMPORT_COMPLETE -> R.string.import_complete
     SettingsMessage.OPERATION_FAILED -> R.string.backup_operation_failed
+    SettingsMessage.QUIET_HOURS_MUST_DIFFER -> R.string.quiet_hours_times_must_differ
 }
 
 private fun backupFileName(): String = "Raachi_Memory_Backup_${LocalDateTime.now().format(BACKUP_FILE_TIME)}.json"

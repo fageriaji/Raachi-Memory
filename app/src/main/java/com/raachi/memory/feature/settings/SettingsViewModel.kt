@@ -7,6 +7,7 @@ import com.raachi.memory.data.backup.BackupManager
 import com.raachi.memory.domain.model.AppPreferences
 import com.raachi.memory.domain.model.ThemeMode
 import com.raachi.memory.domain.repository.AppSettingsRepository
+import com.raachi.memory.domain.usecase.ReconcileReminderSchedulesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +17,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-enum class SettingsMessage { EXPORT_COMPLETE, IMPORT_COMPLETE, OPERATION_FAILED }
+enum class SettingsMessage { EXPORT_COMPLETE, IMPORT_COMPLETE, OPERATION_FAILED, QUIET_HOURS_MUST_DIFFER }
 
 data class SettingsUiState(
     val preferences: AppPreferences = AppPreferences(),
@@ -28,6 +29,7 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val repository: AppSettingsRepository,
     private val backupManager: BackupManager,
+    private val reconcileReminderSchedules: ReconcileReminderSchedulesUseCase,
 ) : ViewModel() {
     private val operation = MutableStateFlow(OperationState())
 
@@ -43,6 +45,22 @@ class SettingsViewModel @Inject constructor(
 
     fun setDefaultSnooze(minutes: Int) = viewModelScope.launch {
         repository.setDefaultSnoozeMinutes(minutes)
+    }
+
+    fun setQuietHoursEnabled(enabled: Boolean) = viewModelScope.launch {
+        repository.setQuietHoursEnabled(enabled)
+        reconcileReminderSchedules(reanchorIntervals = true)
+    }
+
+    fun setQuietHours(startMinutes: Int, endMinutes: Int) {
+        if (startMinutes == endMinutes) {
+            operation.value = OperationState(message = SettingsMessage.QUIET_HOURS_MUST_DIFFER)
+            return
+        }
+        viewModelScope.launch {
+            repository.setQuietHours(startMinutes, endMinutes)
+            reconcileReminderSchedules(reanchorIntervals = true)
+        }
     }
 
     fun export(uri: Uri) = runOperation(SettingsMessage.EXPORT_COMPLETE) { backupManager.exportTo(uri) }

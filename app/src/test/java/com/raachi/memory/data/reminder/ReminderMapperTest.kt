@@ -22,6 +22,7 @@ class ReminderMapperTest {
             nextTriggerAt = Instant.parse("2026-07-29T12:00:00Z"),
             soundEnabled = false,
             vibrationEnabled = true,
+            allowDuringQuietHours = true,
             status = ReminderStatus.SNOOZED,
             createdAt = Instant.parse("2026-07-20T08:00:00Z"),
             updatedAt = Instant.parse("2026-07-29T10:00:00Z"),

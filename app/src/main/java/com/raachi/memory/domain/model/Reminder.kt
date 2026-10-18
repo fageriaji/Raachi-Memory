@@ -13,6 +13,7 @@ data class Reminder(
     val nextTriggerAt: Instant?,
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
+    val allowDuringQuietHours: Boolean = false,
     val status: ReminderStatus = ReminderStatus.ACTIVE,
     val createdAt: Instant,
     val updatedAt: Instant,

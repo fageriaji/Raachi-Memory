@@ -28,7 +28,14 @@ object DatabaseModule {
         context,
         RaachiDatabase::class.java,
         "raachi_memory.db",
-    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
+    ).addMigrations(
+        MIGRATION_1_2,
+        MIGRATION_2_3,
+        MIGRATION_3_4,
+        MIGRATION_4_5,
+        MIGRATION_5_6,
+        MIGRATION_6_7,
+    ).build()
 
     @Provides
     fun provideUserProfileDao(database: RaachiDatabase): UserProfileDao = database.userProfileDao()
@@ -166,5 +173,13 @@ internal val MIGRATION_5_6 = object : Migration(5, 6) {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_expense_transactions_destinationAccountId` ON `expense_transactions` (`destinationAccountId`)")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_expense_transactions_transactionDateEpochDay` ON `expense_transactions` (`transactionDateEpochDay`)")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_expense_transactions_type` ON `expense_transactions` (`type`)")
+    }
+}
+
+internal val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE `reminders` ADD COLUMN `allowDuringQuietHours` INTEGER NOT NULL DEFAULT 0",
+        )
     }
 }

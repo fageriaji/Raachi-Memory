@@ -183,6 +183,17 @@ private class FakeSettingsRepository : AppSettingsRepository {
         preferencesState.value = preferencesState.value.copy(defaultSnoozeMinutes = minutes)
     }
 
+    override suspend fun setQuietHoursEnabled(enabled: Boolean) {
+        preferencesState.value = preferencesState.value.copy(quietHoursEnabled = enabled)
+    }
+
+    override suspend fun setQuietHours(startMinutes: Int, endMinutes: Int) {
+        preferencesState.value = preferencesState.value.copy(
+            quietHoursStartMinutes = startMinutes,
+            quietHoursEndMinutes = endMinutes,
+        )
+    }
+
     override suspend fun replacePreferences(preferences: AppPreferences) {
         preferencesState.value = preferences
     }

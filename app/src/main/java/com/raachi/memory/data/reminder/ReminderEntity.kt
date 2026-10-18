@@ -1,5 +1,6 @@
 package com.raachi.memory.data.reminder
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -19,6 +20,7 @@ data class ReminderEntity(
     val nextTriggerAtMillis: Long?,
     val soundEnabled: Boolean,
     val vibrationEnabled: Boolean,
+    @ColumnInfo(defaultValue = "0") val allowDuringQuietHours: Boolean = false,
     val status: String,
     val createdAtMillis: Long,
     val updatedAtMillis: Long,

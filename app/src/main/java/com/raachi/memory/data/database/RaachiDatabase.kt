@@ -23,7 +23,7 @@ import com.raachi.memory.data.expense.ExpenseTransactionEntity
         ExpenseAccountEntity::class,
         ExpenseTransactionEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class RaachiDatabase : RoomDatabase() {

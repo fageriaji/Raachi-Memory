@@ -13,6 +13,7 @@ import com.raachi.memory.domain.usecase.CompleteReminderUseCase
 import com.raachi.memory.domain.usecase.SkipReminderUseCase
 import com.raachi.memory.domain.usecase.SnoozeReminderUseCase
 import com.raachi.memory.domain.usecase.calculateFollowingTrigger
+import com.raachi.memory.domain.usecase.isIntervalTriggerDuringQuietHours
 import com.raachi.memory.domain.usecase.LogActivityUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.Clock
@@ -57,14 +58,27 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
     private suspend fun handleTrigger(context: Context, id: Long) {
         val reminder = repository.getById(id) ?: return
         if (reminder.status !in setOf(ReminderStatus.ACTIVE, ReminderStatus.SNOOZED)) return
-        val soundEnabled = settingsRepository.preferences.first().reminderSoundEnabled && reminder.soundEnabled
+        val now = clock.instant()
+        val preferences = settingsRepository.preferences.first()
+        if (isIntervalTriggerDuringQuietHours(reminder, now, preferences, clock.zone)) {
+            val next = calculateFollowingTrigger(reminder, now, clock.zone, preferences)
+            val updated = reminder.copy(
+                status = ReminderStatus.ACTIVE,
+                nextTriggerAt = next,
+                updatedAt = now,
+            )
+            repository.save(updated)
+            if (next == null) scheduler.cancel(id) else scheduler.schedule(updated)
+            return
+        }
+        val soundEnabled = preferences.reminderSoundEnabled && reminder.soundEnabled
         showReminderNotification(context, reminder, soundEnabled)
         logActivity(ActivityEventType.REMINDER_ALERT_SENT, id, "Reminder alert sent", reminder.title)
-        val next = calculateFollowingTrigger(reminder, clock.instant(), clock.zone)
+        val next = calculateFollowingTrigger(reminder, now, clock.zone, preferences)
         val updated = reminder.copy(
             status = ReminderStatus.ACTIVE,
             nextTriggerAt = next,
-            updatedAt = clock.instant(),
+            updatedAt = now,
         )
         repository.save(updated)
         if (next != null) scheduler.schedule(updated)

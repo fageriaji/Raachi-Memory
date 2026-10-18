@@ -23,7 +23,7 @@ class AboutAndThemeTest {
     fun aboutScreen_showsProductVersionAndMission() {
         composeRule.setContent {
             RaachiMemoryTheme(darkTheme = false) {
-                AboutScreen(onBack = {})
+                AboutScreen(onOpenDrawer = {})
             }
         }
 

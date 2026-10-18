@@ -183,6 +183,8 @@
     <string name="interval">Interval</string>
     <string name="repeat_every_hours">Repeat every (hours)</string>
     <string name="interval_hours_error">Enter an interval from 1 to 24 hours.</string>
+    <string name="allow_during_quiet_hours">Allow during quiet hours</string>
+    <string name="allow_during_quiet_hours_support">Ignore the quiet-hours schedule for this interval reminder</string>
     <string name="start_date">Start date</string>
     <string name="start_time">Start time</string>
     <string name="future_schedule_error">Choose a valid future time.</string>
@@ -254,6 +256,13 @@
     <string name="reminder_sound_setting_support">Play a sound for reminder alerts</string>
     <string name="default_snooze">Default snooze</string>
     <string name="default_snooze_support">Used by the Snooze notification action</string>
+    <string name="quiet_hours">Quiet hours</string>
+    <string name="quiet_hours_support">Pause interval reminder alerts during your rest time</string>
+    <string name="quiet_hours_schedule">Quiet-hours schedule</string>
+    <string name="quiet_hours_schedule_support">The start time is quiet; the end time can alert normally.</string>
+    <string name="quiet_hours_start">Starts</string>
+    <string name="quiet_hours_end">Ends</string>
+    <string name="quiet_hours_times_must_differ">Quiet-hours start and end times must be different.</string>
     <string name="minutes_short">%1$d min</string>
     <string name="minutes_long">%1$d minutes</string>
     <string name="data_and_privacy">Data &amp; Privacy</string>

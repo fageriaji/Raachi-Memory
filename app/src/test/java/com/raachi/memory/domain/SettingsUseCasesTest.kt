@@ -87,5 +87,9 @@ private class SnoozeSettingsRepository(initial: AppPreferences) : AppSettingsRep
     override suspend fun setThemeMode(mode: ThemeMode) { state.value = state.value.copy(themeMode = mode) }
     override suspend fun setReminderSoundEnabled(enabled: Boolean) { state.value = state.value.copy(reminderSoundEnabled = enabled) }
     override suspend fun setDefaultSnoozeMinutes(minutes: Int) { state.value = state.value.copy(defaultSnoozeMinutes = minutes) }
+    override suspend fun setQuietHoursEnabled(enabled: Boolean) { state.value = state.value.copy(quietHoursEnabled = enabled) }
+    override suspend fun setQuietHours(startMinutes: Int, endMinutes: Int) {
+        state.value = state.value.copy(quietHoursStartMinutes = startMinutes, quietHoursEndMinutes = endMinutes)
+    }
     override suspend fun replacePreferences(preferences: AppPreferences) { state.value = preferences }
 }

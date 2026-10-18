@@ -12,5 +12,7 @@ interface AppSettingsRepository {
     suspend fun setThemeMode(mode: ThemeMode)
     suspend fun setReminderSoundEnabled(enabled: Boolean)
     suspend fun setDefaultSnoozeMinutes(minutes: Int)
+    suspend fun setQuietHoursEnabled(enabled: Boolean)
+    suspend fun setQuietHours(startMinutes: Int, endMinutes: Int)
     suspend fun replacePreferences(preferences: AppPreferences)
 }

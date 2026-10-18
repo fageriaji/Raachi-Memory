@@ -3,6 +3,8 @@ package com.raachi.memory.data.settings
 import androidx.datastore.core.DataStore
 import com.raachi.memory.domain.model.AppPreferences
 import com.raachi.memory.domain.model.AppLockSettings
+import com.raachi.memory.domain.model.DEFAULT_QUIET_HOURS_END_MINUTES
+import com.raachi.memory.domain.model.DEFAULT_QUIET_HOURS_START_MINUTES
 import com.raachi.memory.domain.model.ThemeMode
 import com.raachi.memory.domain.repository.AppLockRepository
 import com.raachi.memory.domain.repository.AppSettingsRepository
@@ -55,6 +57,20 @@ class ProtoAppSettingsRepository @Inject constructor(
         dataStore.updateData { settings -> settings.toBuilder().setDefaultSnoozeMinutes(minutes).build() }
     }
 
+    override suspend fun setQuietHoursEnabled(enabled: Boolean) {
+        dataStore.updateData { settings -> settings.toBuilder().setQuietHoursEnabled(enabled).build() }
+    }
+
+    override suspend fun setQuietHours(startMinutes: Int, endMinutes: Int) {
+        requireValidQuietHours(startMinutes, endMinutes)
+        dataStore.updateData { settings ->
+            settings.toBuilder()
+                .setQuietHoursStartMinutes(startMinutes)
+                .setQuietHoursEndMinutes(endMinutes)
+                .build()
+        }
+    }
+
     override suspend fun replacePreferences(preferences: AppPreferences) {
         dataStore.updateData { settings ->
             settings.toBuilder()
@@ -64,6 +80,9 @@ class ProtoAppSettingsRepository @Inject constructor(
                     if (preferences.reminderSoundEnabled) SoundModeProto.SOUND_MODE_ENABLED else SoundModeProto.SOUND_MODE_DISABLED,
                 )
                 .setDefaultSnoozeMinutes(preferences.defaultSnoozeMinutes.takeIf { it in ALLOWED_SNOOZE_MINUTES } ?: 10)
+                .setQuietHoursEnabled(preferences.quietHoursEnabled)
+                .setQuietHoursStartMinutes(preferences.validQuietHoursStart())
+                .setQuietHoursEndMinutes(preferences.validQuietHoursEnd())
                 .build()
         }
     }
@@ -91,6 +110,17 @@ private fun AppSettings.toDomain(): AppPreferences = AppPreferences(
     },
     reminderSoundEnabled = reminderSound != SoundModeProto.SOUND_MODE_DISABLED,
     defaultSnoozeMinutes = defaultSnoozeMinutes.takeIf { it in ALLOWED_SNOOZE_MINUTES } ?: 10,
+    quietHoursEnabled = if (hasQuietHoursEnabled()) quietHoursEnabled else true,
+    quietHoursStartMinutes = if (hasQuietHoursStartMinutes()) {
+        quietHoursStartMinutes.takeIf(::validMinuteOfDay) ?: DEFAULT_QUIET_HOURS_START_MINUTES
+    } else {
+        DEFAULT_QUIET_HOURS_START_MINUTES
+    },
+    quietHoursEndMinutes = if (hasQuietHoursEndMinutes()) {
+        quietHoursEndMinutes.takeIf(::validMinuteOfDay) ?: DEFAULT_QUIET_HOURS_END_MINUTES
+    } else {
+        DEFAULT_QUIET_HOURS_END_MINUTES
+    },
 )
 
 private fun AppSettings.toAppLockSettings(): AppLockSettings = AppLockSettings(
@@ -107,5 +137,18 @@ private fun ThemeMode.toProto(): ThemeModeProto = when (this) {
     ThemeMode.LIGHT -> ThemeModeProto.THEME_MODE_LIGHT
     ThemeMode.DARK -> ThemeModeProto.THEME_MODE_DARK
 }
+
+private fun AppPreferences.validQuietHoursStart(): Int =
+    quietHoursStartMinutes.takeIf(::validMinuteOfDay) ?: DEFAULT_QUIET_HOURS_START_MINUTES
+
+private fun AppPreferences.validQuietHoursEnd(): Int =
+    quietHoursEndMinutes.takeIf { validMinuteOfDay(it) && it != validQuietHoursStart() }
+        ?: DEFAULT_QUIET_HOURS_END_MINUTES
+
+private fun requireValidQuietHours(startMinutes: Int, endMinutes: Int) {
+    require(validMinuteOfDay(startMinutes) && validMinuteOfDay(endMinutes) && startMinutes != endMinutes)
+}
+
+private fun validMinuteOfDay(minutes: Int): Boolean = minutes in 0..1439
 
 private val ALLOWED_SNOOZE_MINUTES = setOf(5, 10, 15, 30, 60)

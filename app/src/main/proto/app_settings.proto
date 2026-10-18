@@ -14,6 +14,9 @@ message AppSettings {
   string app_lock_recovery_hash = 8;
   string app_lock_recovery_salt = 9;
   bool app_lock_biometric_enabled = 10;
+  optional bool quiet_hours_enabled = 11;
+  optional int32 quiet_hours_start_minutes = 12;
+  optional int32 quiet_hours_end_minutes = 13;
 }
 
 enum ThemeModeProto {

@@ -19,9 +19,10 @@ import com.raachi.memory.data.profile.ProfilePhotoStore
 import com.raachi.memory.data.profile.MAX_PROFILE_PHOTO_BYTES
 import com.raachi.memory.data.reminder.ReminderDao
 import com.raachi.memory.data.reminder.ReminderEntity
-import com.raachi.memory.data.reminder.toDomain
 import com.raachi.memory.domain.model.ActivityEventType
 import com.raachi.memory.domain.model.AppPreferences
+import com.raachi.memory.domain.model.DEFAULT_QUIET_HOURS_END_MINUTES
+import com.raachi.memory.domain.model.DEFAULT_QUIET_HOURS_START_MINUTES
 import com.raachi.memory.domain.model.Gender
 import com.raachi.memory.domain.model.LedgerDirection
 import com.raachi.memory.domain.model.LedgerKind
@@ -36,6 +37,7 @@ import com.raachi.memory.domain.model.ExpenseTransactionType
 import com.raachi.memory.domain.repository.AppSettingsRepository
 import com.raachi.memory.domain.repository.LedgerAlertScheduler
 import com.raachi.memory.domain.repository.ReminderScheduler
+import com.raachi.memory.domain.usecase.ReconcileReminderSchedulesUseCase
 import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
@@ -63,6 +65,7 @@ class BackupManager @Inject constructor(
     private val settingsRepository: AppSettingsRepository,
     private val profilePhotoStore: ProfilePhotoStore,
     private val reminderScheduler: ReminderScheduler,
+    private val reconcileReminderSchedules: ReconcileReminderSchedulesUseCase,
     private val ledgerScheduler: LedgerAlertScheduler,
     private val clock: Clock,
 ) {
@@ -138,9 +141,7 @@ class BackupManager @Inject constructor(
 
         oldReminderIds.forEach(reminderScheduler::cancel)
         oldLedgerIds.forEach(ledgerScheduler::cancel)
-        payload.reminders.map(ReminderEntity::toDomain)
-            .filter { it.status in setOf(ReminderStatus.ACTIVE, ReminderStatus.SNOOZED) && it.nextTriggerAt != null }
-            .forEach(reminderScheduler::schedule)
+        reconcileReminderSchedules()
         payload.ledgerEntries.map(LedgerEntryEntity::toDomain)
             .filter { !it.isReturned && it.dueDate != null }
             .forEach(ledgerScheduler::schedule)
@@ -236,7 +237,8 @@ private fun ReminderEntity.toJson() = JSONObject()
     .put("id", id).put("title", title).put("category", category).putNullable("description", description)
     .put("repeatType", repeatType).putNullable("intervalHours", intervalHours)
     .put("scheduledAtMillis", scheduledAtMillis).putNullable("nextTriggerAtMillis", nextTriggerAtMillis)
-    .put("soundEnabled", soundEnabled).put("vibrationEnabled", vibrationEnabled).put("status", status)
+    .put("soundEnabled", soundEnabled).put("vibrationEnabled", vibrationEnabled)
+    .put("allowDuringQuietHours", allowDuringQuietHours).put("status", status)
     .put("createdAtMillis", createdAtMillis).put("updatedAtMillis", updatedAtMillis)
 
 private fun JSONObject.toReminder() = ReminderEntity(
@@ -250,6 +252,7 @@ private fun JSONObject.toReminder() = ReminderEntity(
     nextTriggerAtMillis = nullableLong("nextTriggerAtMillis"),
     soundEnabled = getBoolean("soundEnabled"),
     vibrationEnabled = getBoolean("vibrationEnabled"),
+    allowDuringQuietHours = optBoolean("allowDuringQuietHours", false),
     status = enumName("status", ReminderStatus.entries.map { it.name }),
     createdAtMillis = getLong("createdAtMillis"),
     updatedAtMillis = getLong("updatedAtMillis"),
@@ -348,15 +351,24 @@ private fun JSONObject.toExpenseTransaction(): ExpenseTransactionEntity {
 private fun AppPreferences.toJson() = JSONObject()
     .put("onboardingCompleted", onboardingCompleted).put("themeMode", themeMode.name)
     .put("reminderSoundEnabled", reminderSoundEnabled).put("defaultSnoozeMinutes", defaultSnoozeMinutes)
+    .put("quietHoursEnabled", quietHoursEnabled)
+    .put("quietHoursStartMinutes", quietHoursStartMinutes)
+    .put("quietHoursEndMinutes", quietHoursEndMinutes)
 
 private fun JSONObject.toPreferences(): AppPreferences {
     val snooze = getInt("defaultSnoozeMinutes")
+    val quietHoursStart = optInt("quietHoursStartMinutes", DEFAULT_QUIET_HOURS_START_MINUTES)
+    val quietHoursEnd = optInt("quietHoursEndMinutes", DEFAULT_QUIET_HOURS_END_MINUTES)
     require(snooze in ALLOWED_SNOOZE_MINUTES)
+    require(quietHoursStart in MINUTES_IN_DAY && quietHoursEnd in MINUTES_IN_DAY && quietHoursStart != quietHoursEnd)
     return AppPreferences(
         onboardingCompleted = getBoolean("onboardingCompleted"),
         themeMode = ThemeMode.valueOf(getString("themeMode")),
         reminderSoundEnabled = getBoolean("reminderSoundEnabled"),
         defaultSnoozeMinutes = snooze,
+        quietHoursEnabled = optBoolean("quietHoursEnabled", true),
+        quietHoursStartMinutes = quietHoursStart,
+        quietHoursEndMinutes = quietHoursEnd,
     )
 }
 
@@ -377,9 +389,10 @@ private fun <T> JSONArray.mapObjects(transform: (JSONObject) -> T): List<T> {
     return List(length()) { index -> transform(getJSONObject(index)) }
 }
 
-private const val BACKUP_SCHEMA_VERSION = 3
+private const val BACKUP_SCHEMA_VERSION = 4
 private const val MIN_SUPPORTED_BACKUP_SCHEMA_VERSION = 1
 private const val MILLIS_PER_DAY = 86_400_000L
 private const val MAX_BACKUP_CHARACTERS = 20 * 1024 * 1024
 private const val MAX_RECORDS_PER_SECTION = 100_000
 private val ALLOWED_SNOOZE_MINUTES = setOf(5, 10, 15, 30, 60)
+private val MINUTES_IN_DAY = 0..1439
